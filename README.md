@@ -4,7 +4,7 @@
 [![Dependency Status](https://david-dm.org/boennemann/badges.svg)](https://david-dm.org/boennemann/badges)
 [![Open Source Love](https://badges.frapsoft.com/os/gpl/gpl.svg?v=102)](https://github.com/ellerbrock/open-source-badge/)
 
-...
+![Screenshot](img/img.png)
 
 ## Installation
 
@@ -25,6 +25,7 @@ $ git clone https://github.com/mirkomarras/fair-voice.git
 ## Usage
 
 #### Train and test your model
+
 
 
 For the train the model:
