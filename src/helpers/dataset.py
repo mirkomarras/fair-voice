@@ -62,7 +62,7 @@ def load_data_set(audio_dir, mv_user_ids, include=False):
 
     return x, y
 
-def load_data_from_csv(path_file,base_path, sample='audio',labels='label'):
+def load_data_from_csv(path_file, base_path, sample='audio', labels='label'):
     """
         Function permit to load an audio dataset from csv
         :args                   Contains both path of  file and the folder of file audio
@@ -70,11 +70,11 @@ def load_data_from_csv(path_file,base_path, sample='audio',labels='label'):
         :label                  Column that contains labels
         :return:                (List of audio file paths, List of user labels)
     """
-    print(path_file);
-    df=pd.read_csv(path_file,encoding='latin1', error_bad_lines=False, warn_bad_lines=False)
-    x = np.array([os.path.join(base_path,string) for string in df[sample]])
-    y= np.array([string for string in df['label']])
-    return x, y;
+    print('> laod data from csv in path {}'.format(path_file))
+    df = pd.read_csv(path_file, encoding='latin1', error_bad_lines=False, warn_bad_lines=False)
+    x = np.array([os.path.join(base_path, string) for string in df[sample]])
+    y = np.array([string for string in df['label']])
+    return x, y
 
 
 def filter_by_gender(paths, labels, meta_file, gender='neutral'):

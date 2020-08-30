@@ -19,10 +19,15 @@ import soundfile as sf
 
 sys.setrecursionlimit(10000)
 
-from helpers.audio import decode_audio_fix_size, play_n_rec
+from helpers.audio import decode_audio_fix_size, play_n_rec, get_tf_spectrum2
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
+SAVE_PATH = '/home/meddameloni/dl-fair-voice/exp/trained_model/'
+RESULT_PATH = '/home/meddameloni/dl-fair-voice/exp/results/'
+RESULT_PATH_TRAIN3 = '/home/meddameloni/dl-fair-voice/exp/results/deep_res_EN-SP_train3/'
+RESULT_PATH_TRAIN_NO_PRIOR = '/home/meddameloni/dl-fair-voice/exp/results/trainSP-testEN/'
+RESULT_PATH_VOXCELEB = '/home/meddameloni/dl-fair-voice/exp/results/voxceleb_res/'
 
 class StepDecay():
     def __init__(self, init_alpha=0.01, decay_factor=0.25, decay_step=10):
@@ -89,8 +94,6 @@ class VladPooling(tf.keras.layers.Layer):
         config['g_centers'] = self.g_centers
         config['mode']=self.mode
         return config
-
-
 
 
 class Model(object):
@@ -182,7 +185,7 @@ class Model(object):
         """
         return self.model.predict(signal)
 
-    def train(self, train_data, test_data, steps_per_epoch=10, epochs=1, learning_rate=1e-1, patience=20, decay_factor=0.1, decay_step=10, optimizer='adam' ,info=""):
+    def train(self, train_data, test_data, steps_per_epoch=1, epochs=1, learning_rate=1e-1, patience=20, decay_factor=0.1, decay_step=10, optimizer='adam' ,info=""):
         """
         Method to train and validate this model
         :param train_data:      Training data pipeline - shape ({'input_1': (batch, None, 1), 'input_2': (batch, 3)}), (batch, classes)
@@ -197,25 +200,25 @@ class Model(object):
         schedule = StepDecay(init_alpha=learning_rate,
                              decay_factor=decay_factor, decay_step=decay_step)
         learning_rate = LearningRateScheduler(schedule)
-        save_path='../trained_model'
-        x = datetime.datetime.now()
-        info=info.replace('..', '')
-        info=info.replace('/', '_')
-        info=info.replace('.csv', '')
-        folder=str(x.day)+'_'+str(x.month)+'_'+str(x.year)+'_'+str(x.hour)+'_'+str(x.minute)+'_'+self.name+'_'+info
-        save_path=os.path.join(save_path,folder)
 
-        if not( os.path.exists(save_path) ):
+        early_stopping = tf.keras.callbacks.EarlyStopping(
+            monitor='acc', baseline=0.95, patience=2, mode='auto')
+
+        folder_name = self.name + '_' + datetime.datetime.now().strftime('%d%m%Y_%H%M') + '_' + info.split('/')[-1][:-4]
+        save_path = os.path.join(SAVE_PATH, folder_name)
+
+        if not(os.path.exists(save_path)):
             os.makedirs(save_path)
 
-        save_weight = ModelCheckpoint(os.path.join(save_path, 'weights-{epoch:02d}-{acc:.3f}.tf'),
+        save_weight = ModelCheckpoint(os.path.join(save_path, 'weights-{epoch:02d}-{acc:.3f}.h5'),
                                                monitor='acc',
-                                               mode='max',save_best_only=True)
-        callbacks=[learning_rate,save_weight]
-        num_nonimproving_steps, last_eer = 0, 1.0
+                                               mode='max', save_best_only=True)
+
+        callbacks = [learning_rate, save_weight, early_stopping]
+        #num_nonimproving_steps, last_eer = 0, 1.0
 
         for epoch in range(epochs):
-            self.model.fit(train_data, steps_per_epoch=steps_per_epoch,initial_epoch=epoch, epochs=epoch+1, callbacks=callbacks)
+            self.model.fit(train_data, steps_per_epoch=steps_per_epoch, initial_epoch=epoch, epochs=epoch+1, callbacks=callbacks)
             """
             eer, _, _ = self.test(test_data)
             if eer < last_eer:
@@ -233,6 +236,7 @@ class Model(object):
                 break
              """
         print('>', 'trained', self.name, 'model')
+
 
     def test(self, test_data):
         """
@@ -263,52 +267,52 @@ class Model(object):
         return eer, thr_eer, thr_far1
 
 
-    def test_and_save_on_csv(self,test_file,audio_dir,aggregation,model_path):
+    def test_and_save_on_csv(self, test_file, audio_dir, aggregation, model_path):
         """
         Method to test this model against verification attempts
         :param test_data:       Pre-computed testing data pairs - shape ((pairs, None, 1), (pairs, None, 1)), (pairs, binary_label)
         :return:                (Model EER, EER threshold, FAR1% threshold)
         """
-        normalize_switch=True
+        normalize_switch = True
         # Loading file
 
-
-        #weights-02-0.604
         print("Loading model : ", os.path.exists(model_path))
-        if aggregation=='vlad' or aggregation=='gvlad':
-            model=tf.keras.models.load_model(model_path,custom_objects={'VladPooling': VladPooling})
+        if aggregation == 'vlad' or aggregation == 'gvlad':
+            model = tf.keras.models.load_model(model_path, custom_objects={'VladPooling': VladPooling})
         else:
-            model=tf.keras.models.load_model(model_path)
+            model = tf.keras.models.load_model(model_path)
         if self.name == 'xvector':
-            inference_model=tf.keras.models.Model(inputs=model.get_input_at(0), outputs=model.layers[-4].get_output_at(0))
+            inference_model = tf.keras.models.Model(inputs=model.get_input_at(0), outputs=model.layers[-4].get_output_at(0))
         else:
-            inference_model=tf.keras.models.Model(inputs=model.get_input_at(0), outputs=model.layers[-2].get_output_at(0))
-        inference_model.summary();
+            inference_model = tf.keras.models.Model(inputs=model.get_input_at(0), outputs=model.layers[-2].get_output_at(0))
+        inference_model.summary()
         print('Start Testing')
         pairs = pd.read_csv(test_file)
         for index, row in pairs.iterrows():
-            audio_1=decode_audio_fix_size(audio_dir+row['audio_1'],input_format='aud');
-            audio_2=decode_audio_fix_size(audio_dir+row['audio_2'],input_format='aud');
-            print(audio_1.shape)
-            emb1=inference_model.predict(audio_1)
-            emb2=inference_model.predict(audio_2)
-            #print(emb1)
+            if self.name == 'xvector':
+                audio_1 = decode_audio_fix_size(audio_dir+row['audio_1'], input_format='bank')
+                audio_2 = decode_audio_fix_size(audio_dir+row['audio_2'], input_format='bank')
+            else:
+                audio_1 = decode_audio_fix_size(audio_dir + row['audio_1'], input_format='spec')
+                audio_2 = decode_audio_fix_size(audio_dir + row['audio_2'], input_format='spec')
+
+            emb1 = inference_model.predict(audio_1)
+            emb2 = inference_model.predict(audio_2)
+
             if normalize_switch:
                 emb1 = tf.keras.layers.Lambda(lambda emb1: K.l2_normalize(emb1, 1))(emb1)
                 emb2 = tf.keras.layers.Lambda(lambda emb2: K.l2_normalize(emb2, 1))(emb2)
 
-            print(emb1.shape)
-            #print(round(np.sum(np.square(emb1 - emb2)),2))
-            similarity = 1 -cosine(emb1,emb2)
-            print('PAIR', index+1, len(pairs.index),row['label'], round(similarity, 2))
+            similarity = 1 - cosine(emb1, emb2)
+            print('PAIR', index+1, len(pairs.index), row['label'], round(similarity, 2))
             pairs.loc[index, 'simlarity'] = float("{0:.2f}".format(similarity))
 
-        x = datetime.datetime.now()
-        info=test_file
-        info=info.replace('..', '')
-        info=info.replace('/', '_')
-        info=info.replace('.csv', '')
-        path=str(x.day)+'_'+str(x.month)+'_'+str(x.year)+'_'+str(x.hour)+'_'+str(x.minute)+'_'+info+"_result.csv"
+
+        path = RESULT_PATH_VOXCELEB + \
+               self.name + '_' + model_path.split('/')[-2].split('_')[-1] + '_' + \
+               model_path.split('/')[-1].split('-')[-1][2:-3] + '_' + \
+               datetime.datetime.now().strftime('%d%m%Y') + '_' + \
+               test_file.split('/')[-1][:-4] + '.csv'
         pairs.to_csv(path, index=False)
 
     def impersonate(self, impostor_signal, threshold, policy, x_mv_test, y_mv_test, male_x_mv_test, female_x_mv_test, n_templates=10):

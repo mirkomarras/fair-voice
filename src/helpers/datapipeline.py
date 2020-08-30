@@ -5,7 +5,7 @@ import tensorflow as tf
 import numpy as np
 import random
 
-from helpers.audio import decode_audio, get_tf_spectrum,get_tf_spectrum2
+from helpers.audio import decode_audio, get_tf_spectrum,get_tf_spectrum2, get_tf_filterbanks
 
 def data_pipeline_generator_verifier(x, y, classes, sample_rate=16000, n_seconds=2,input_format='aud',num_fft=512,spec_len=250):
     """
@@ -20,34 +20,39 @@ def data_pipeline_generator_verifier(x, y, classes, sample_rate=16000, n_seconds
     """
 
     indexes = list(range(len(x)))
-    count=0;
+    count = 0
     print(len(x))
     random.shuffle(indexes)
     for index in indexes:
-        count+=1;
+        count += 1
         audio = decode_audio(x[index], tgt_sample_rate=sample_rate)
-        if len(audio) > (sample_rate*n_seconds) :
+        if len(audio) > (sample_rate*n_seconds):
             start_sample = random.choice(range(len(audio) - sample_rate*n_seconds))
             end_sample = start_sample + sample_rate*n_seconds
         else:
-            bucket= np.zeros(abs(len(audio) -( sample_rate*n_seconds )))
-            audio=np.concatenate([audio,bucket]);
-            start_sample = 0;
-            end_sample = start_sample + sample_rate*n_seconds;
+            bucket = np.zeros(abs(len(audio) - (sample_rate*n_seconds)))
+            audio = np.concatenate([audio, bucket])
+            start_sample = 0
+            end_sample = start_sample + sample_rate*n_seconds
 
 
         input = audio[start_sample:end_sample]
-        if input_format=='spec':
-            spectrogram= get_tf_spectrum2(input,spec_len=spec_len ,n_fft=num_fft);
-            input= np.expand_dims(spectrogram, axis=2)
-        elif input_format=='aud':
-            input= np.expand_dims(input, axis=1)
+        if input_format == 'spec':
+            spectrogram = get_tf_spectrum2(input, spec_len=spec_len, n_fft=num_fft)
+            input = np.expand_dims(spectrogram, axis=2)
+        if input_format == 'bank':
+            input = np.expand_dims(input, axis=[0, 2])
+            input = np.float32(input)
+            filterbank = get_tf_filterbanks(input)
+            input = np.squeeze(filterbank)
+        elif input_format == 'aud':
+            input = np.expand_dims(input, axis=1)
 
         label = y[index]
         impulse = np.random.randint(2, size=3)
 
         #yield {'input1': audio, 'input_2': impulse}, tf.keras.utils.to_categorical(label, num_classes=classes, dtype='float32')
-        yield  input, tf.keras.utils.to_categorical(label, num_classes=classes, dtype='float32')
+        yield input, tf.keras.utils.to_categorical(label, num_classes=classes, dtype='float32')
     raise StopIteration()
 
 def data_pipeline_verifier(x, y, classes, sample_rate=16000, n_seconds=3, batch=64, prefetch=1024,dim=[None,None],input_format='aud',num_fft=512,spec_len=250):
@@ -63,7 +68,7 @@ def data_pipeline_verifier(x, y, classes, sample_rate=16000, n_seconds=3, batch=
     :param prefetch:    Number of prefetched batches
     :return:            Data pipeline
     """
-
+    print('Enter verifier..')
     dataset = tf.data.Dataset.from_generator(lambda: data_pipeline_generator_verifier(x, y, classes, sample_rate=sample_rate, n_seconds=n_seconds, input_format=input_format,num_fft=num_fft,spec_len=spec_len), \
      output_types=( tf.float32, tf.float32),output_shapes=( dim, [classes]))
     print(dataset)

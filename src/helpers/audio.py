@@ -24,7 +24,7 @@ def decode_audio(fp, tgt_sample_rate=16000):
     audio_sf, new_sample_rate = librosa.load(fp, sr=tgt_sample_rate, mono=True)
 
     return audio_sf
-def decode_audio_fix_size(fp, sample_rate=16000,n_seconds=3,input_format='spec'):
+def decode_audio_fix_size(fp, sample_rate=16000, n_seconds=3, input_format='spec'):
     """
     Function to decode an audio file
     :param fp:              File path to the audio sample
@@ -34,30 +34,34 @@ def decode_audio_fix_size(fp, sample_rate=16000,n_seconds=3,input_format='spec')
 
     assert sample_rate > 0
 
-    #audio, audio_sr = sf.read(fp, dtype='float32')
-    #if audio.ndim > 1 or audio_sr != sample_rate: # Is not mono
     audio, new_sample_rate = librosa.load(fp, sr=sample_rate, mono=True)
-    # print('lunghezza audio:',len(audio));
-    if  len(audio) > (sample_rate*n_seconds):
+
+    if len(audio) > (sample_rate*n_seconds):
         start_sample = random.choice(range(len(audio)-(sample_rate*n_seconds)))
     else:
         bucket = np.zeros(abs(len(audio)-(sample_rate*n_seconds)))
-        audio  = np.concatenate([audio,bucket]);
-        start_sample=0;
-    end_sample= start_sample+(sample_rate*n_seconds);
-    #print('inzio fine',start_sample,end_sample)
-    audio = audio[start_sample:end_sample];
-    #print('lunghezza:',len(audio))
+        audio = np.concatenate([audio, bucket])
+        start_sample = 0
+    end_sample = start_sample+(sample_rate*n_seconds)
+
+    audio = audio[start_sample:end_sample]
+
     if input_format == 'spec':
-        spect=get_tf_spectrum2(audio);
-        output=np.expand_dims(spect, axis=0)
-        output=np.expand_dims(output, axis=3)
+        spect=get_tf_spectrum2(audio)
+        output = np.expand_dims(spect, axis=0)
+        output = np.expand_dims(output, axis=3)
+    elif input_format == 'bank':
+        input = np.expand_dims(audio, axis=[0, 2])
+        input = np.float32(input)
+        filterbank = get_tf_filterbanks(input)
+        output = filterbank
     else:
-        output=np.expand_dims(audio, axis=0)
-        output=np.expand_dims(output, axis=2)
+        output = np.expand_dims(audio, axis=0)
+        output = np.expand_dims(output, axis=2)
+
+    return output
 
 
-    return output;
 def decode_audio(fp, tgt_sample_rate=16000):
     """
     Function to decode an audio file
@@ -178,9 +182,6 @@ def get_tf_spectrum(signal, sample_rate=16000, frame_size=0.025, frame_stride=0.
     assert normalized_spectrum_shape[1] == num_fft / 2 and normalized_spectrum_shape[3] == 1
 
     return normalized_spectrum
-
-
-
 
 
 def get_tf_filterbanks(signal, sample_rate=16000, frame_size=0.025, frame_stride=0.01, num_fft=512, n_filters=24, lower_edge_hertz=80.0, upper_edge_hertz=8000.0):
