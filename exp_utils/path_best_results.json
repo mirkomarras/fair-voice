@@ -1,0 +1,73 @@
+{
+  "English-test1": [
+    "/home/meddameloni/dl-fair-voice/exp/results/xvector_English-train1_991_11062020_English-test1.csv",
+    "/home/meddameloni/dl-fair-voice/exp/results/xvector_English-train2_962_11062020_English-test1.csv",
+    "/home/meddameloni/dl-fair-voice/exp/results/xvector_English-Spanish-train1_992_17062020_English-test1.csv",
+    "/home/meddameloni/dl-fair-voice/exp/results/xvector_English-Spanish-train2_986_17062020_English-test1.csv",
+    "/home/meddameloni/dl-fair-voice/exp/results/xvector_English-Spanish-train3_987_19062020_English-test1.csv",
+    "/home/meddameloni/dl-fair-voice/exp/results/resnet34vox_English-train1_877_12062020_English-test1.csv",
+    "/home/meddameloni/dl-fair-voice/exp/results/resnet34vox_English-train2_714_12062020_English-test1.csv",
+    "/home/meddameloni/dl-fair-voice/exp/results/resnet34vox_English-Spanish-train1_920_18062020_English-test1.csv",
+    "/home/meddameloni/dl-fair-voice/exp/results/resnet34vox_English-Spanish-train2_911_18062020_English-test1.csv",
+    "/home/meddameloni/dl-fair-voice/exp/results/resnet34vox_English-Spanish-train3_858_19062020_English-test1.csv"],
+  "English-test2": [
+    "/home/meddameloni/dl-fair-voice/exp/results/xvector_English-train1_969_11062020_English-test2.csv",
+    "/home/meddameloni/dl-fair-voice/exp/results/xvector_English-train2_987_11062020_English-test2.csv",
+    "/home/meddameloni/dl-fair-voice/exp/results/xvector_English-Spanish-train1_992_17062020_English-test2.csv",
+    "/home/meddameloni/dl-fair-voice/exp/results/xvector_English-Spanish-train2_986_17062020_English-test2.csv",
+    "/home/meddameloni/dl-fair-voice/exp/results/xvector_English-Spanish-train3_993_19062020_English-test2.csv",
+    "/home/meddameloni/dl-fair-voice/exp/results/resnet34vox_English-train1_883_12062020_English-test2.csv",
+    "/home/meddameloni/dl-fair-voice/exp/results/resnet34vox_English-train2_726_12062020_English-test2.csv",
+    "/home/meddameloni/dl-fair-voice/exp/results/resnet34vox_English-Spanish-train1_920_18062020_English-test2.csv",
+    "/home/meddameloni/dl-fair-voice/exp/results/resnet34vox_English-Spanish-train2_904_18062020_English-test2.csv",
+    "/home/meddameloni/dl-fair-voice/exp/results/resnet34vox_English-Spanish-train3_870_19062020_English-test2.csv"
+  ],
+  "English-test3": [
+    "/home/meddameloni/dl-fair-voice/exp/results/xvector_English-train1_969_11062020_English-test3.csv",
+    "/home/meddameloni/dl-fair-voice/exp/results/xvector_English-train2_962_11062020_English-test3.csv",
+    "/home/meddameloni/dl-fair-voice/exp/results/xvector_English-Spanish-train1_992_17062020_English-test3.csv",
+    "/home/meddameloni/dl-fair-voice/exp/results/xvector_English-Spanish-train2_986_17062020_English-test3.csv",
+    "/home/meddameloni/dl-fair-voice/exp/results/xvector_English-Spanish-train3_987_19062020_English-test3.csv",
+    "/home/meddameloni/dl-fair-voice/exp/results/resnet34vox_English-train1_877_12062020_English-test3.csv",
+    "/home/meddameloni/dl-fair-voice/exp/results/resnet34vox_English-train2_714_12062020_English-test3.csv",
+    "/home/meddameloni/dl-fair-voice/exp/results/resnet34vox_English-Spanish-train1_912_18062020_English-test3.csv",
+    "/home/meddameloni/dl-fair-voice/exp/results/resnet34vox_English-Spanish-train2_911_18062020_English-test3.csv",
+    "/home/meddameloni/dl-fair-voice/exp/results/resnet34vox_English-Spanish-train3_858_20062020_English-test3.csv"
+  ],
+  "Spanish-test1": [
+    "/home/meddameloni/dl-fair-voice/exp/results/xvector_Spanish-train1_986_11062020_Spanish-test1.csv",
+    "/home/meddameloni/dl-fair-voice/exp/results/xvector_Spanish-train2_986_11062020_Spanish-test1.csv",
+    "/home/meddameloni/dl-fair-voice/exp/results/xvector_English-Spanish-train1_982_18062020_Spanish-test1.csv",
+    "/home/meddameloni/dl-fair-voice/exp/results/xvector_English-Spanish-train2_986_18062020_Spanish-test1.csv",
+    "/home/meddameloni/dl-fair-voice/exp/results/xvector_English-Spanish-train3_987_19062020_Spanish-test1.csv",
+    "/home/meddameloni/dl-fair-voice/exp/results/resnet34vox_Spanish-train1_922_12062020_Spanish-test1.csv",
+    "/home/meddameloni/dl-fair-voice/exp/results/resnet34vox_Spanish-train2_892_12062020_Spanish-test1.csv",
+    "/home/meddameloni/dl-fair-voice/exp/results/resnet34vox_English-Spanish-train1_920_18062020_Spanish-test1.csv",
+    "/home/meddameloni/dl-fair-voice/exp/results/resnet34vox_English-Spanish-train2_911_18062020_Spanish-test1.csv",
+    "/home/meddameloni/dl-fair-voice/exp/results/resnet34vox_English-Spanish-train3_864_20062020_Spanish-test1.csv"
+  ],
+  "Spanish-test2": [
+    "/home/meddameloni/dl-fair-voice/exp/results/xvector_Spanish-train1_986_11062020_Spanish-test2.csv",
+    "/home/meddameloni/dl-fair-voice/exp/results/xvector_Spanish-train2_979_11062020_Spanish-test2.csv",
+    "/home/meddameloni/dl-fair-voice/exp/results/xvector_English-Spanish-train1_992_17062020_Spanish-test2.csv",
+    "/home/meddameloni/dl-fair-voice/exp/results/xvector_English-Spanish-train2_978_18062020_Spanish-test2.csv",
+    "/home/meddameloni/dl-fair-voice/exp/results/xvector_English-Spanish-train3_980_19062020_Spanish-test2.csv",
+    "/home/meddameloni/dl-fair-voice/exp/results/resnet34vox_Spanish-train1_922_12062020_Spanish-test2.csv",
+    "/home/meddameloni/dl-fair-voice/exp/results/resnet34vox_Spanish-train2_892_12062020_Spanish-test2.csv",
+    "/home/meddameloni/dl-fair-voice/exp/results/resnet34vox_English-Spanish-train1_920_18062020_Spanish-test2.csv",
+    "/home/meddameloni/dl-fair-voice/exp/results/resnet34vox_English-Spanish-train2_904_18062020_Spanish-test2.csv",
+    "/home/meddameloni/dl-fair-voice/exp/results/resnet34vox_English-Spanish-train3_864_20062020_Spanish-test2.csv"
+  ],
+  "Spanish-test3": [
+    "/home/meddameloni/dl-fair-voice/exp/results/xvector_Spanish-train1_986_11062020_Spanish-test3.csv",
+    "/home/meddameloni/dl-fair-voice/exp/results/xvector_Spanish-train2_979_11062020_Spanish-test3.csv",
+    "/home/meddameloni/dl-fair-voice/exp/results/xvector_English-Spanish-train1_992_18062020_Spanish-test3.csv",
+    "/home/meddameloni/dl-fair-voice/exp/results/xvector_English-Spanish-train2_978_18062020_Spanish-test3.csv",
+    "/home/meddameloni/dl-fair-voice/exp/results/xvector_English-Spanish-train3_980_19062020_Spanish-test3.csv",
+    "/home/meddameloni/dl-fair-voice/exp/results/resnet34vox_Spanish-train1_922_12062020_Spanish-test3.csv",
+    "/home/meddameloni/dl-fair-voice/exp/results/resnet34vox_Spanish-train2_892_12062020_Spanish-test3.csv",
+    "/home/meddameloni/dl-fair-voice/exp/results/resnet34vox_English-Spanish-train1_920_18062020_Spanish-test3.csv",
+    "/home/meddameloni/dl-fair-voice/exp/results/resnet34vox_English-Spanish-train2_908_18062020_Spanish-test3.csv",
+    "/home/meddameloni/dl-fair-voice/exp/results/resnet34vox_English-Spanish-train3_858_20062020_Spanish-test3.csv"
+  ]
+}
