@@ -3,7 +3,7 @@ import pandas as pd
 
 
 VOX_CELEB_TEST_FILE_PATH = '/home/meddameloni/test_voxceleb_pairs.txt'
-BASE_TEST_FOLDER = '/home/meddameloni/dl-fair-voice/exp/test/'
+BASE_TEST_FOLDER = '/home/meddameloni/fair-voice/exp/test/'
 
 def create_csv_file(aud1, aud2, label):
     print('\n\n> creating csv for test...\n')
