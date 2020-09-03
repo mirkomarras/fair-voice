@@ -7,14 +7,17 @@ import argparse
 import shutil
 from collections import Counter
 
+# Set constants for framework paths
 
-RESULT_PATH = '/home/meddameloni/dl-fair-voice/exp/results/'
-DEST_PATH = '/home/meddameloni/dl-fair-voice/exp/metrics'
+# RESULT_PATH indicates the path where are stored the resulting .csv from models tests
+RESULT_PATH = '/home/meddameloni/fair-voice/exp/results/'
+# DEST_PATH indicates the path where are going to be saved the measurements of the calculation done in the script
+DEST_PATH = '/home/meddameloni/fair-voice/exp/metrics'
 
 
 def calculate_parameters(y, y_score):
     """
-    Function to calcolate EER, FAR, FRR
+    Function to calcolate EER, FAR, FRR and other important measurements for tests
     :param y:               real result
     :param y_score:         predicted result
     :return:                min_index
@@ -37,10 +40,16 @@ def calculate_parameters(y, y_score):
 
 
 def load_results(data, res_filename):
-
-    # All
+    """
+    Function used to extract from from data
+    :param data: contains the results reported in the current .csv file stored from the test
+    :param res_filename: is the name of the current .csv used to retrieve all the useful info to describe the result
+    :return: three records: one concerning EER, one FAR, one FRR with all the related information
+    """
+    # Here are taken the columns containing the expected results (label) and the predicted ones (similarity)
     label = data.loc[:, 'label']
     similarity = data.loc[:, 'simlarity']
+    # The data are passed to the function in order to calculate all the results
     m, far_t, frr_t, far, frr, eer, thr, thresholds = calculate_parameters(label, similarity)
 
     # Old
@@ -72,24 +81,24 @@ def load_results(data, res_filename):
     # err_y = round(eer_y * 100, 2)
     # err_fm = round(eer_fm * 100, 2)
     # err_ml = round(eer_ml * 100, 2)
-    #
+
+    far = round(far * 100, 2)
     # far_o = round(far_o * 100, 2)
     # far_y = round(far_y * 100, 2)
     # far_fm = round(far_fm * 100, 2)
     # far_ml = round(far_ml * 100, 2)
-    far = round(far * 100, 2)
 
+    frr = round(frr * 100, 2)
     # frr_o = round(frr_o * 100, 2)
     # frr_y = round(frr_y * 100, 2)
     # frr_fm = round(frr_fm * 100, 2)
     # frr_ml = round(frr_ml * 100, 2)
-    frr = round(frr * 100, 2)
 
     # err_record = [res_filename.split('_')[0], res_filename.split('_')[1], res_filename.split('_')[4],  res_filename.split('_')[2][:2] + '.' + res_filename.split('_')[2][-1], err, err_o, err_y, err_fm, err_ml]
     # far_record = [res_filename.split('_')[0], res_filename.split('_')[1], res_filename.split('_')[4],  res_filename.split('_')[2][:2] + '.' + res_filename.split('_')[2][-1], far, far_o, far_y, far_fm, far_ml]
     # frr_record = [res_filename.split('_')[0], res_filename.split('_')[1], res_filename.split('_')[4],  res_filename.split('_')[2][:2] + '.' + res_filename.split('_')[2][-1], frr, frr_o, frr_y, frr_fm, frr_ml]
 
-    # Unlock if interested only in total amount parameters
+    # Record composition for subsequent insertion in final .csv output
     err_record = [res_filename.split('_')[0], res_filename.split('_')[1], res_filename.split('_')[4],
                   res_filename.split('_')[2][:2] + '.' + res_filename.split('_')[2][-1], err]
     far_record = [res_filename.split('_')[0], res_filename.split('_')[1], res_filename.split('_')[4],
@@ -101,6 +110,15 @@ def load_results(data, res_filename):
 
 
 def create_Experiment_CSV_details(eer, far, frr, dest_path):
+    """
+    Function used to create the .csv metric report considering all the distinct measures taken (so divided per sensitive
+    categories)
+    :param eer: contains the list of records concerning the calculated EER
+    :param far: contains the list of records concerning the calculated FAR
+    :param frr: contains the list of records concerning the calculated FRR
+    :param dest_path: path where create and store the results
+    :return: NONE
+    """
     if (not os.path.exists(dest_path)):
         os.mkdir(dest_path)
     else:
@@ -128,7 +146,15 @@ def create_Experiment_CSV_details(eer, far, frr, dest_path):
 
 
 def create_Experiment_CSV_details_totEERonly(eer, far, frr, dest_path):
-
+    """
+    Function used to create the .csv metric report considering just the total EER
+    categories)
+    :param eer: contains the list of records concerning the calculated EER
+    :param far: contains the list of records concerning the calculated FAR
+    :param frr: contains the list of records concerning the calculated FRR
+    :param dest_path: path where create and store the results
+    :return: NONE
+    """
     if (not os.path.exists(dest_path)):
         os.mkdir(dest_path)
     else:
@@ -168,13 +194,17 @@ def main():
     eer_to_load, far_to_load, frr_to_load = [], [], []
     count_res = 0
     print('>Start Scanning Results folder')
+    # The result folder is scanned
     for res in os.listdir(args.result_path):
+        # Only the folders are taken in consideration
         if not os.path.isdir((os.path.join(args.result_path, res))):
             count_res += 1
             print('>Elaborating ---> \t' + res.replace('_meta_metadata_test_', ''))
+            # the current result .csv is read
             res_csv = pd.read_csv(os.path.join(args.result_path, res))
+            # the main measures are calculated from the results
             eer, far, frr = load_results(res_csv, res)
-
+            # the returned records above are added in the corresponding lists
             eer_to_load.append(eer)
             far_to_load.append(far)
             frr_to_load.append(frr)
