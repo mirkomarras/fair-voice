@@ -27,7 +27,7 @@ This repository contains the source code of the following articles:
 - [Experiment Utils](#experiment-utils)
     - [Equal Error Rate model's performance comparison](#equal-error-rate-model's-performance-comparison)
     - [Results Similarity Check](#similarity-check)
-    - [Audio Features Similarity Check](#audio-file-check)
+    - [Audio Features Similarity Check](#audio-features-similarity-check)
 - [Reported Results](#reported-results)
 - [Contribution](#contribution)
 - [Citations](#citations)
