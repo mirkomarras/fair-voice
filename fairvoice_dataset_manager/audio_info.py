@@ -11,37 +11,54 @@ from dataset_preprocess import ages_vals
 
 
 def sample_group_info(source,
-                      from_file=False,
                       type_file=None,
                       metadata="/home/meddameloni/FairVoice/metadata/metadata.csv",
                       dataset_dir="/home/meddameloni/FairVoice",
                       distinct_group=False,
                       young_cap="fourties"):
+    """
+    Takes users from different sources and returns a csv file with the average of several audio info of the
+    audios of each user
+
+    :param source: file containing data (list of users, train file, test file, dataframe)
+    :param type_file: type_file controls which users are considered for audios, if it is not None
+    users are taken from "train" or "test" files
+    :param metadata: file containing metadata of the users if source is not a dataframe
+    :param dataset_dir: base directory of audio files
+    :param distinct_group: if true returns info of audios of each user considering the distinct group "female", "male",
+    "old", "young", so each user is present 2 times in the output file. if false returns info of audios of each unique
+    group, so "female old", "female young", "male old", "male young"
+    :param young_cap: this should be the same value used to generate train and test files. It is not re-written in other
+    files, so it needs to be given manually as input
+    :return:
+    """
     if type_file is not None:
         if type_file not in ["test", "train"]:
             raise TypeError("type_file must be None or 'test' or 'train'")
 
-    if from_file:
+    if not isinstance(source, pd.DataFrame):
         if os.path.splitext(source)[1] == '.csv':
             out_name = 'sample_info_{}'.format(os.path.basename(source))
             data = pd.read_csv(source, sep=',', encoding='utf-8')
         else:
             out_name = 'sample_info_{}.csv'.format(os.path.basename(source))
             with open(source, 'r') as source_file:
-                data = ast.literal_eval(source_file.read())
+                try:
+                    data = ast.literal_eval(source_file.read())
+                except ValueError:
+                    raise ValueError('non-csv files are considered files '
+                                     'containing a python array-like object of users')
     else:
-        if isinstance(source, str):
-            raise TypeError('source must be a pandas DataFrame, to open a file set from_file=True')
         data = source
         out_name = 'sample_info_{}.csv'.format(hash(str(data)))
 
-    if isinstance(data, list):
+    if isinstance(data, list):  # python array-like object
         meta = pd.read_csv(metadata, sep=',', encoding='utf-8')
         df = pd.DataFrame()
         for t_lang, t_id in data:
             df = pd.concat([df, meta[(meta["language_l1"] == t_lang) & (meta["id_user"] == t_id)]])
     else:
-        if type_file is "test":
+        if type_file is "test":  # test file have the paths of the audios of the 2 compared users in each row
             users_audios = defaultdict(set)
             for row in data.itertuples():
                 user_path_1, audio_1 = os.path.split(row.audio_1)
@@ -54,7 +71,7 @@ def sample_group_info(source,
             for lang_id in users_audios.keys():
                 user_lang, user_id = lang_id.split('_')
                 df = pd.concat([df, meta[(meta["language_l1"] == user_lang) & (meta["id_user"] == user_id)]])
-        elif type_file is "train":
+        elif type_file is "train":  # train file have the path of the audios of only a user in each row
             users_audios = defaultdict(set)
             for row in data.itertuples():
                 user_path, audio = os.path.split(row.audio)
@@ -65,7 +82,7 @@ def sample_group_info(source,
             for lang_id in users_audios.keys():
                 user_lang, user_id = lang_id.split('_')
                 df = pd.concat([df, meta[(meta["language_l1"] == user_lang) & (meta["id_user"] == user_id)]])
-        else:
+        else:  # data is a pandas dataframe
             df = data
 
     rows = []
@@ -74,6 +91,8 @@ def sample_group_info(source,
 
     if not distinct_group:
         df_by_gender = df.groupby("gender")
+
+        # age for loop inside gender for loop for unique groups
         for gender in df_by_gender.groups:
             gender_group = df_by_gender.get_group(gender)
             gender_by_age = gender_group.set_index("age").groupby(ages)
@@ -104,9 +123,10 @@ def sample_group_info(source,
                     rows.append(row_data)
     else:
         df_by_gender = df.groupby("gender")
+
+        # gender for loop (distinct_group)
         for gender in df_by_gender.groups:
             gender_group = df_by_gender.get_group(gender)
-            print(gender)
 
             for row in gender_group.itertuples():
                 if type_file is not None:
@@ -134,9 +154,8 @@ def sample_group_info(source,
                 rows.append(row_data)
 
         df_by_age = df.set_index("age").groupby(ages)
-        for age in df_by_age.groups:
+        for age in df_by_age.groups:  # age for loop (distinct_group)
             age_group = df_by_age.get_group(age).reset_index()
-            print(age)
 
             for row in age_group.itertuples():
                 if type_file is not None:
@@ -174,9 +193,18 @@ def sample_group_info(source,
     )
 
 
-def sample_group_info_groupby(sample_info_file, distinct_group=False):
+def sample_group_info_groupby(sample_info_file):
+    """
+    It should be used on a "sample_info_file", that is the file generated from the function "sample_group_info". It
+    returns a csv file containing the average of the audio info for each group, so a csv file with only 4 rows
+
+    :param sample_info_file: the sample info file given in input containing the average of the audio info of all the
+    audios of each user
+    :return:
+    """
     out_dir = os.path.dirname(sample_info_file)
     file_name = os.path.splitext(sample_info_file)[0]
+    distinct_group = True if file_name.startswith('distinct_') else False
     out_file_name = os.path.join(out_dir, '{}_{}group_avg.csv'.format(file_name, 'distinct_' if distinct_group else ''))
 
     df = pd.read_csv(sample_info_file, sep=',', encoding='utf-8')
@@ -213,6 +241,11 @@ This is based on the "REPET-SIM" method of `Rafii and Pardo, 2012
 
 
 def get_audio_noise(audio_path):
+    """
+    As stated above this code was taken from a notebook in the website of librosa
+    :param audio_path: path of the audio from which extract the noise score
+    :return: noise score of the audio
+    """
     #############################################
     # Load an example with vocals.
     y, sr = librosa.load(audio_path, sr=None)
@@ -313,14 +346,4 @@ def get_audio_noise(audio_path):
 
 
 if __name__ == "__main__":
-    for file in os.listdir('/home/meddameloni/FairVoice/metadata/sample_info'):
-        if "distinct" in file and "train" in file:
-            sample_group_info_groupby(
-                os.path.join('/home/meddameloni/FairVoice/metadata/sample_info', file),
-                distinct_group=True
-            )
-            print(file)
-            # sample_group_info(os.path.join('/home/meddameloni/FairVoice/metadata/PER_TRAIN_E_TEST/train', file),
-            #                   from_file=True,
-            #                   distinct_group=True,
-            #                   type_file="train")
+    print()

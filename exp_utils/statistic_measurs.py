@@ -2,11 +2,20 @@ import scipy.stats
 import itertools
 import os
 import pandas as pd
+import sys
 
-out_path = '/home/meddameloni/dl-fair-voice/exp/statistics'
+out_path = 'fair-voice/exp/statistics'
 
 
 def sample_info_statistics(path):
+    """
+    It evaluates the statistical relation between the audio files of each group where each group can be one of
+    female_old, female_young, male_old, male_young with "paired T-test". It creates a txt file specifying if
+    the audio files of the two groups have the same distribution or not.
+
+    :param path: path of the "sample_info" file, e.g. "sample_info_English-test1.csv" file is an accepted file
+    :return:
+    """
     df = pd.read_csv(path, sep=',', encoding='utf-8')
     df_group = df.groupby('group')
     gr_comb = itertools.combinations(df_group.groups, 2)
@@ -15,6 +24,12 @@ def sample_info_statistics(path):
 
     out_cols = ["stats_value", "p_result"]
     multi_index_len = len(df_stats_cols)
+    # Creation of a multiindex in the format (1# Level: [(female_old, female_young)],
+    #                                         2# Level: [n_sample, duration_avg, min_duration, .....]
+    # To create this type of index pandas accepts two arrays, the first array must contain the same value as many as
+    # the length of the second array.
+    # The first array is created generating an array of length "multi_index_len" for each value of "comb" with "map",
+    # then a "chain" is created with itertools and finally the elements of the chain are regrouped in an array
     out_multi_index = pd.MultiIndex.from_arrays([
         list(itertools.chain.from_iterable(map(lambda comb: [comb]*multi_index_len,
                                                gr_comb)
@@ -37,6 +52,8 @@ def sample_info_statistics(path):
         out_file.write(out_df.to_string())
 
 
+# Paired Student’s t-test code copied from
+# https://machinelearningmastery.com/statistical-hypothesis-tests-in-python-cheat-sheet/
 def t_test(data1, data2, return_verbose=True):
     stat, p = scipy.stats.ttest_rel(data1, data2)
     stats_str = 'stat={0:.3f}, p={1:.3f}'.format(stat, p)
@@ -53,5 +70,4 @@ def t_test(data1, data2, return_verbose=True):
 
 
 if __name__ == "__main__":
-    for file in ["English-test1", "English-test2", "English-test3", "Spanish-test1", "Spanish-test2", "Spanish-test3"]:
-        sample_info_statistics('/home/meddameloni/FairVoice/metadata/sample_info/sample_info_{}.csv'.format(file))
+    sample_info_statistics(sys.argv[1])

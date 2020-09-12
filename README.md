@@ -1,10 +1,9 @@
 # Fair Voice Toolbox
-[![Build Status](https://travis-ci.org/pages-themes/cayman.svg?branch=master)](https://travis-ci.org/pages-themes/cayman)
 [![GitHub version](https://badge.fury.io/gh/boennemann%2Fbadges.svg)](http://badge.fury.io/gh/boennemann%2Fbadges)
 [![Dependency Status](https://david-dm.org/boennemann/badges.svg)](https://david-dm.org/boennemann/badges)
 [![Open Source Love](https://badges.frapsoft.com/os/gpl/gpl.svg?v=102)](https://github.com/ellerbrock/open-source-badge/)
 
-[Gianni Fenu](), [Mirko Marras](https://www.mirkomarras.com/), [Hicham Lafhouli](), [Giacomo Medda](), [Giacomo Meloni](www.linkedin.com/in/giacomo-meloni)
+[Gianni Fenu](https://people.unica.it/giannifenu/), [Hicham Lafhouli](), [Giacomo Medda](), [Giacomo Meloni](https://www.linkedin.com/in/giacomo-meloni), [Mirko Marras](https://www.mirkomarras.com/)
 
 University of Cagliari
 
@@ -28,7 +27,8 @@ This repository contains the source code of the following articles:
 - [Experiment Utils](#experiment-utils)
     - [Equal Error Rate model's performance comparison](#equal-error-rate-model's-performance-comparison)
     - [Results Similarity Check](#similarity-check)
-    - [Audio Features Similarity_Check](#audio-file-check)
+    - [Audio Features Similarity Check](#audio-file-check)
+- [Reported Results](#reported-results)
 - [Contribution](#contribution)
 - [Citations](#citations)
 - [License](#license)
@@ -51,11 +51,14 @@ $ git clone https://github.com/mirkomarras/fair-voice.git
 ```
 
 ## Fair-Voice Dataset
-Our work is based on training and testing models using the Fair-Voice Dataset. This dataset was composed by downloading utterances from the Common Voice Mozilla public dataesets which can be found [here](https://commonvoice.mozilla.org/it/datasets).
+Our work is based on training and testing models using the Fair-Voice Dataset. This dataset was composed by downloading utterances from the Common Voice Mozilla public datasets which can be found [here](https://commonvoice.mozilla.org/it/datasets).
 
 The composite dataset was cleaned of any damaged audio tracks and organized by languages with enough samples to allow for proper processing. Subsequently, the audio files originally in MP3 format were converted to WAV format in order to make them suitable for the extraction of the features to be fed to the models.
 
-To download the Fair-Voice dataset click [here](https://docs.google.com/forms/d/1Et3VxKpG2xKwOF46uT5sZvnTmOMiXYhVkZUJRwL7aFA/prefill) and follow the steps below:
+To download the Fair-Voice dataset click the reported link and follow the steps below:
+
+> https://docs.google.com/forms/d/1Et3VxKpG2xKwOF46uT5sZvnTmOMiXYhVkZUJRwL7aFA/prefill
+
 1. Fill out the form you find via the link above;
 2. Download, in the project folder, the zip of the dataset whose link will be provided via email;
 3. Create the destination folder for the dataset and unzip the folder inside project:
@@ -72,8 +75,180 @@ To download the Fair-Voice dataset click [here](https://docs.google.com/forms/d/
     ```
 
 ## Fair-Voice Data Folder Description 
+The Fair-Voice dataset consists of audio samples of 6 languages: Chinese, English, French, German, Kabyle, Spanish. In particular,
+the Chinese one has been created gathering together the Common Voice datasets *Chinese (China)* and *Chinese (Taiwan)*, and the Spanish one
+gathering together the Common Voice datasets *Spanish*, *Basque* and *Catalan*.
+
+The Fair-Voice dataset is organized in folders as follows:
+```
+Fair-Voice
+|   metadata.csv
+└───English
+|   └───id00000
+|   └───id00001
+|   └───...
+|   └───idXXXXX
+|       |   audio00000.wav
+|       |   audio00001.wav
+|       |   ...
+└───German
+└───...
+```
+
+In the structure above, the audio00001.wav belongs to the user with idXXXXX as id and it is an audio sample in English.
+
+metadata.csv is the file containing the metadata as the name suggests. Each row represents a user described by the following attribues:
+- **id_user**: an ID that identifies uniquely a user of a particular language in the format idXXXXX, e.g. id00001
+- **hash_user**: the hash of the attributes of the user, it can be equal among users of different languages
+- **language_l1**: it is the language of "higher" level or the own language of the user, e.g. Spanish for Basque, Catalan and Spanish or English for only English
+- **language_l2**: it is the language of origin, e.g. "ba" for Basque or "zh-TW" for Chinese (Taiwan)
+- **gender**: the gender of the user, it can be empty
+- **age**: the age group of the user, e.g. teens or fourties, it can be empty
+- **accent**: the accent of the user, e.g. indian for English, it can be empty
+- **n_sensitive**: the number of sensitive attributes provided by the user considering age, gender and accent as sensitive attributes
+- **n_sample**: the number of audio samples of the user 
+
 
 ## Pre-processing Module
+The file `./fairvoice_dataset_manager/dataset_preprocess.py` is the Python module that can be imported in your code to prepare the files for the learning process.
+It relies on the `metadata.csv` described above to generate new metadata files from which tbe module can create the train and test files. These new metadata files
+can be generated passing some parameters to decide the distribution of female and male users, the distribution of young and old users (a user is considered young if their age
+is smaller than the parameter `young_cap`, old if their age is greater than or equal to the same parameter), the minimum number of audio samples per user et cetera.
+
+The functions of this module that should be used are:
+```python
+def prepare_fair_voice(metadata="metadata.csv",
+                       encoding="utf-8",
+                       dir_metadata="./FairVoice/metadata",
+                       young_cap=default,
+                       min_sample=5,
+                       group_by_lang=default,
+                       lang_equality=False,
+                       female_male_ratio=default,
+                       young_old_ratio=default,
+                       mode=Modes.MERGE,
+                       tot_test_users=100):
+    """
+    This is the function of generation of metadatas. It takes some parameters and creates some metadatas in basis
+    of passed parameters, one metadata for each parameter, so multiple values for each parameter results in a total of
+    metadatas equals to the cartesian product of each value of each parameter. It can creates metadatas where users are
+    distributed in terms of gender for 30% (0.3) of females and 70% (0.7) of males or in terms of age, or both, with or
+    without the equalisation of users in terms of language. ##NOT FULLY IMPLEMENTED##
+    
+    :param metadata: the file with the metadata of all the users
+    :param encoding: encoding of the csv, they are the same of the built-in "open" function
+    :param dir_metadata: directory where the file of metadata is saved
+    :param young_cap: array of caps. Each cap determines the age group from which a user is considered "old". If
+    young_cap = ["thirties", "fourties"] two types of metadatas will be created, one where users with an age greater
+    than or equals to thirties are considered old (the others young), and the other one where users with an age greater
+    than or equals to fourties are considered old.
+    :param min_sample: it filters all the users taking only the ones with almost the specified minimum of audio samples
+    :param group_by_lang: array of the languages that need to be considered. If not specified all languages of the
+    dataset are taken into consideration. If set to None the metadata is processed in basis of the other parameters
+    :param lang_equality: if True it creates metadatas with a number of users equal among all the languages of
+    group_by_lang (if group_by_lang is None this value is discarded).
+    :param female_male_ratio: an array of couples of ratios with a sum of 1.0. It specifies the proportion of gender
+    in the created metadatas. Default value is [(0.3, 0.7), (0.4, 0.6), (0.5, 0.5), (0.6, 0.4)]. One metadata is created
+    for each value (or more depending on the number of values of the other parameters). First value is for females, the
+    second for males.
+    :param young_old_ratio: an array of couples of ratios with a sum of 1.0. It specifies the proportion of age
+    in the created metadatas. Default value is [(0.4, 0.6), (0.5, 0.5), (0.6, 0.4)]. One metadata is created
+    for each value (or more depending on the number of values of the other parameters). First values if for the young,
+    the second for the old.
+    :param mode:
+        distinct: create a csv for each of the value in group_by_lang, female_male_ratio (young_old_ratio and young_cap)
+        metadata_1.csv = female_male_ratio[0]
+        ...
+        metadata_n.csv = group_by_lang[0]
+        metadata_n+1.csv = young_old_ratio[0] for each cap in young_cap
+          example with young_old_ratio = [(0.3, 0.7)] and young_cap = ["fourties", "fifties"]
+            metadata_1.csv = labels with (0.3, 0.7) young old ratio where "young" is each row with age < "fourties"
+            metadata_2.csv = labels with (0.3, 0.7) young old ratio where "young" is each row with age < "fifties"
+    
+        merge: create a csv for each of the value of the group (female_male_ratio, (young_old_ratio and young_cap)) with
+        the entries of all languages in group_by_lang
+        metadata_1.csv = all langs in group_by_lang, (female_male_ratio[0], (young_old_ratio[0] and young_cap[0]))
+        ...
+        metadata_n.csv = all langs in group_by_lang, (female_male_ratio[0], (young_old_ratio[0] and young_cap[0]))
+        metadata_n+1.csv = all langs in group_by_lang, (female_male_ratio[0], (young_old_ratio[0] and young_cap[1]))
+        metadata_n+m.csv = all langs in group_by_lang, (female_male_ratio[3], (young_old_ratio[1] and young_cap[1]))
+    
+        merge_foreach_lang: same behaviour of merge, but taking into account one language at a time.
+                      So if "merge" creates N csvs, "merge_foreach_lang" creates N*len(group_by_lang) csvs
+    
+        distinct_merge: shortcut to do both merge and distinct at once
+    
+        distinct_merge_foreach_lang: shortcut to do both merge_foreach_lang and distinct at once
+    
+    :param tot_test_users: This parameter needs an integer value, that is the number of users used for testing. This
+    integer is used to load a file with a name in the form "test_users_LANGUAGE_100" where 100 is the value of
+    tot_test_users. This file contains the users used for testing and it will be created by the function
+    "split_dataset", one for each language. It can be useful when it is necessary to create different metadata with
+    several types of distribution of the users, but maintaining the same users for testing and the users are distributed
+    by this function without losing those users that are present in testing files.
+    Right now is available only in distinct mode and it needs "lang_equality" to be True and "group_by_lang" not to be
+    None.
+    
+    :return: the id of the first metadata generated by this function. It can be passed to "split_dataset", which takes
+    all the metadatas present in the file "info_metadata_X_Y" (X is equal to the id returned by this function) and split
+    them in train and test.
+    """
+
+def split_dataset(metadata="metadata.csv",
+                  info_start_id=None,
+                  encoding="utf-8",
+                  dir_metadata="./FairVoice/metadata",
+                  dir_dataset="./FairVoice",
+                  test_percentage=0.2,
+                  sample_equality=False,
+                  sample_cap=default,
+                  strong_equality=False,
+                  sample_groups_equality=False,
+                  tot_test_users=None,
+                  test_equality=default,
+                  test_per_lang=False,
+                  load_test_users=False):
+    """
+    Function that takes the metadata files generated by "prepare_fair_voice" function and generated the csv files that
+    will be used for testing and training.
+
+    :param metadata: the file with the metadata of all the users
+    :param info_start_id: the id of the first metadata from which the split need to start. If "info_start_id" = X then
+    split_dataset will process all the files described in the file "info_metadata_X_Y.csv", so all the files unitl Y
+    will be splitted
+    :param encoding: encoding of the csv, they are the same of the built-in "open" function
+    :param dir_metadata: directory where the file of metadata is saved
+    :param dir_dataset: directory where the dataset is saved
+    :param test_percentage: percentage of the dataset to be used for testing
+    :param sample_equality: if True it can be used a cap to reduce the number of audio samples considered for each user.
+    The cap is specified by the parameter "sample_cap".
+    :param sample_cap: as a dictionary it can be used to specify the cap of audios of each user for each language
+    dataset where the key is the language and the values is the cap, so the audio samples of each user will not be more
+    than the specified value. As an integer it will be used as the cap for every language. This parameter is used only
+    when "sample_equality" is True.
+    :param strong_equality: for each group N users are taken for tests. N is chosen in this way:
+                                        N * groups = len(dataset) * test_percentage
+                            it can happen that some groups are represented by a number of users less than N.
+                            In this situation:
+                            - strong_equality = True ensure the equality of users in the groups for testing
+                            changing the value of N = len(group with least number of users), but the number of users
+                            for testing does not satisfy the test_percentage.
+                            - strong_equality = False does not satisfy the equality of users among the groups, and
+                            satisfies the test_percentage taking more users from the most represented group
+    :param sample_groups_equality: if True the number of audio samples will be equalised among the groups (female old,
+    female young, male old, male young)
+    :param tot_test_users: if not None it is equal to the number of users used for testing
+    :param test_equality: an array of 3 possible values ["random", "age", "gender"]. For each value a testing file
+    will be generated with the type of balancing chosen. With "random" the couples of audio paths for test are chosen
+    randomly, with "age" the couples are balanced by age and with "gender" the couples are balanced by gender.
+    :param test_per_lang: if True the audio paths couples used for testing will be separated in multiple files depending
+    on the language of the users, so each testing file will have couples among users of the same language
+    :param load_test_users: if True the users used for testing are loaded from the files or the users chosen for testing
+    will be saved at the end of the function if "tot_test_users" is None
+
+    :return:
+    """
+``` 
 
 ## Models
 Based on the work done by our previous studies, we have made available a set of pre-trained models that can be downloaded [here](https://drive.google.com/drive/folders/1vRk5J4Nf-ohGRSnguPRkgNMh4i8n0UWB).
@@ -225,7 +400,7 @@ A supporting .JSON file named '*path_best_results.json*' is used to process a sp
 
 Once this file has been defined, it will be possible to execute the script by specifying one of the following parameters:
 
-```
+```bash
 $ python statistic_distribution.py      --eer   statistical correlations are processed regarding EER results
                                         --far   statistical correlations are processed regarding FAR results
                                         --frr   statistical correlations are processed regarding FRR results
@@ -237,6 +412,31 @@ If the processing is done for *EER* a .CSV file is generated in the output folde
 
 If the processing is done for *FAR* or *FRR* then a .CSV file is generated in the output folder ./exp/statistics/ where for each result file it is specified what we said above and the report of total cases by sensitive category grouped by user is added.
 
+### Audio Features Similarity Check
+The script `./exp_utils/statistic_measures.py` evaluates the statistical relation between the audio files of each group where each group can be one of *female_old*, *female_young*, *male_old*, *male_young* with "paired T-test". 
+It takes as input a *sample_info* file, that is a type of file generated by the script `./fairvoice_dataset_manager/audio_info.py` which takes train or test files and generates csv files of average characteristics of audio samples of each group.
+`statistic_measuers.py` creates a txt file specifying if the audio files of the two groups have the same distribution or not. The variable `out_path` can be modified to set the path where the output txt files will be saved.
+
+The script can be executed with the following command:
+
+```bash
+$ python3 statistic_measures.py SAMPLE_INFO_FILE_PATH
+```
+
+## Reported Results
+All results reported in the "*Improving Fairness in Speaker Recognition*" study are uploaded online and are freely accessible on [Google Drive](https://drive.google.com/drive/folders/1QLjpc0spAvyDThhoFEH5S-YEdkOmNCOa).
+
+You can consult the results and download the .CSV files used for the train and test. The folders are structured as follows:
+
+```
+exp
+|___metrics
+    |______
+|
+|
+|
+|
+```
 
 ## Contribution
 This code is provided for educational purposes and aims to facilitate reproduction of our results, and further research
