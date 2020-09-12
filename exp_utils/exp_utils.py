@@ -7,7 +7,7 @@ import argparse
 import shutil
 from collections import Counter
 
-# Set constants for framework paths
+# Constants for framework paths
 
 # RESULT_PATH indicates the path where are stored the resulting .csv from models tests
 RESULT_PATH = '/home/meddameloni/fair-voice/exp/results/'
@@ -53,58 +53,58 @@ def load_results(data, res_filename):
     m, far_t, frr_t, far, frr, eer, thr, thresholds = calculate_parameters(label, similarity)
 
     # Old
-    # data_o = data[data.age_1 == 'old']
-    # similarity_o = data_o.loc[:, 'simlarity']
-    # label_o = data_o.loc[:, 'label']
-    # m_o, far_ot, frr_ot, far_o, frr_o, eer_o, thr_o, t_o = calculate_parameters(label_o, similarity_o)
+    data_o = data[data.age_1 == 'old']
+    similarity_o = data_o.loc[:, 'simlarity']
+    label_o = data_o.loc[:, 'label']
+    m_o, far_ot, frr_ot, far_o, frr_o, eer_o, thr_o, t_o = calculate_parameters(label_o, similarity_o)
 
     # Young
-    # data_y = data[data.age_1 == 'young']
-    # similarity_y = data_y.loc[:, 'simlarity']
-    # label_y = data_y.loc[:, 'label']
-    # m_y, far_yt, frr_yt, far_y, frr_y, eer_y, thr_y, t_y = calculate_parameters(label_y, similarity_y)
+    data_y = data[data.age_1 == 'young']
+    similarity_y = data_y.loc[:, 'simlarity']
+    label_y = data_y.loc[:, 'label']
+    m_y, far_yt, frr_yt, far_y, frr_y, eer_y, thr_y, t_y = calculate_parameters(label_y, similarity_y)
 
     # Female
-    # data_fm = data[data.gender_1 == 'female']
-    # similarity_fm = data_fm.loc[:, 'simlarity']
-    # label_fm = data_fm.loc[:, 'label']
-    # m_fm, far_fmt, frr_fmt, far_fm, frr_fm, eer_fm, thr_fm, t_fm = calculate_parameters(label_fm, similarity_fm)
+    data_fm = data[data.gender_1 == 'female']
+    similarity_fm = data_fm.loc[:, 'simlarity']
+    label_fm = data_fm.loc[:, 'label']
+    m_fm, far_fmt, frr_fmt, far_fm, frr_fm, eer_fm, thr_fm, t_fm = calculate_parameters(label_fm, similarity_fm)
 
     # Male
-    # data_ml = data[data.gender_1 == 'male']
-    # similarity_ml = data_ml.loc[:, 'simlarity']
-    # label_ml = data_ml.loc[:, 'label']
-    # m_ml, far_mlt, frr_mlt, far_ml, frr_ml, eer_ml, thr_ml, t_ml = calculate_parameters(label_ml, similarity_ml)
+    data_ml = data[data.gender_1 == 'male']
+    similarity_ml = data_ml.loc[:, 'simlarity']
+    label_ml = data_ml.loc[:, 'label']
+    m_ml, far_mlt, frr_mlt, far_ml, frr_ml, eer_ml, thr_ml, t_ml = calculate_parameters(label_ml, similarity_ml)
 
     err = round(eer * 100, 2)
-    # err_o = round(eer_o * 100, 2)
-    # err_y = round(eer_y * 100, 2)
-    # err_fm = round(eer_fm * 100, 2)
-    # err_ml = round(eer_ml * 100, 2)
+    err_o = round(eer_o * 100, 2)
+    err_y = round(eer_y * 100, 2)
+    err_fm = round(eer_fm * 100, 2)
+    err_ml = round(eer_ml * 100, 2)
 
     far = round(far * 100, 2)
-    # far_o = round(far_o * 100, 2)
-    # far_y = round(far_y * 100, 2)
-    # far_fm = round(far_fm * 100, 2)
-    # far_ml = round(far_ml * 100, 2)
+    far_o = round(far_o * 100, 2)
+    far_y = round(far_y * 100, 2)
+    far_fm = round(far_fm * 100, 2)
+    far_ml = round(far_ml * 100, 2)
 
     frr = round(frr * 100, 2)
-    # frr_o = round(frr_o * 100, 2)
-    # frr_y = round(frr_y * 100, 2)
-    # frr_fm = round(frr_fm * 100, 2)
-    # frr_ml = round(frr_ml * 100, 2)
+    frr_o = round(frr_o * 100, 2)
+    frr_y = round(frr_y * 100, 2)
+    frr_fm = round(frr_fm * 100, 2)
+    frr_ml = round(frr_ml * 100, 2)
 
-    # err_record = [res_filename.split('_')[0], res_filename.split('_')[1], res_filename.split('_')[4],  res_filename.split('_')[2][:2] + '.' + res_filename.split('_')[2][-1], err, err_o, err_y, err_fm, err_ml]
-    # far_record = [res_filename.split('_')[0], res_filename.split('_')[1], res_filename.split('_')[4],  res_filename.split('_')[2][:2] + '.' + res_filename.split('_')[2][-1], far, far_o, far_y, far_fm, far_ml]
-    # frr_record = [res_filename.split('_')[0], res_filename.split('_')[1], res_filename.split('_')[4],  res_filename.split('_')[2][:2] + '.' + res_filename.split('_')[2][-1], frr, frr_o, frr_y, frr_fm, frr_ml]
+    err_record = [res_filename.split('_')[0], res_filename.split('_')[1], res_filename.split('_')[4],  res_filename.split('_')[2][:2] + '.' + res_filename.split('_')[2][-1], err, err_o, err_y, err_fm, err_ml]
+    far_record = [res_filename.split('_')[0], res_filename.split('_')[1], res_filename.split('_')[4],  res_filename.split('_')[2][:2] + '.' + res_filename.split('_')[2][-1], far, far_o, far_y, far_fm, far_ml]
+    frr_record = [res_filename.split('_')[0], res_filename.split('_')[1], res_filename.split('_')[4],  res_filename.split('_')[2][:2] + '.' + res_filename.split('_')[2][-1], frr, frr_o, frr_y, frr_fm, frr_ml]
 
     # Record composition for subsequent insertion in final .csv output
-    err_record = [res_filename.split('_')[0], res_filename.split('_')[1], res_filename.split('_')[4],
-                  res_filename.split('_')[2][:2] + '.' + res_filename.split('_')[2][-1], err]
-    far_record = [res_filename.split('_')[0], res_filename.split('_')[1], res_filename.split('_')[4],
-                  res_filename.split('_')[2][:2] + '.' + res_filename.split('_')[2][-1], far]
-    frr_record = [res_filename.split('_')[0], res_filename.split('_')[1], res_filename.split('_')[4],
-                  res_filename.split('_')[2][:2] + '.' + res_filename.split('_')[2][-1], frr]
+    # err_record = [res_filename.split('_')[0], res_filename.split('_')[1], res_filename.split('_')[4],
+    #               res_filename.split('_')[2][:2] + '.' + res_filename.split('_')[2][-1], err]
+    # far_record = [res_filename.split('_')[0], res_filename.split('_')[1], res_filename.split('_')[4],
+    #               res_filename.split('_')[2][:2] + '.' + res_filename.split('_')[2][-1], far]
+    # frr_record = [res_filename.split('_')[0], res_filename.split('_')[1], res_filename.split('_')[4],
+    #               res_filename.split('_')[2][:2] + '.' + res_filename.split('_')[2][-1], frr]
 
     return err_record, far_record, frr_record
 
@@ -209,8 +209,8 @@ def main():
             far_to_load.append(far)
             frr_to_load.append(frr)
 
-    # create_Experiment_CSV_details(eer_to_load, far_to_load, frr_to_load, args.dest_folder)
-    create_Experiment_CSV_details_totEERonly(eer_to_load, far_to_load, frr_to_load, args.dest_folder)
+    create_Experiment_CSV_details(eer_to_load, far_to_load, frr_to_load, args.dest_folder)
+    # create_Experiment_CSV_details_totEERonly(eer_to_load, far_to_load, frr_to_load, args.dest_folder)
     print('\n\n> {} RESULTS ELABORATED!'.format(count_res))
 
 if __name__ == '__main__':
