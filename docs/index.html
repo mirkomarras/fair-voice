@@ -13,7 +13,8 @@
         <link href="https://fonts.googleapis.com/css?family=Montserrat:400,700" rel="stylesheet" type="text/css" />
         <link href="https://fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic,700italic" rel="stylesheet" type="text/css" />
         <link href="https://fonts.googleapis.com/css?family=Roboto+Slab:400,100,300,700" rel="stylesheet" type="text/css" />
-       <link href="https://fonts.googleapis.com/css2?family=Abril+Fatface&family=Exo+2:wght@100;800&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Abril+Fatface&family=Exo+2:wght@100;800&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Righteous&display=swap" rel="stylesheet">
         <!-- Core theme CSS (includes Bootstrap)-->
         <link href="css/styles.css" rel="stylesheet" />
     </head>
@@ -35,9 +36,9 @@
         </nav>
         <!-- Masthead-->
         <header class="masthead">
-            <div class="container">
+            <div  style="background-color:#ffffff40">
               <!--  <div class="masthead-subheading">Welcome To Our Studio!</div> -->
-                <div style="font-family: 'Exo 2';font-size:80px">FairVoice Toolbox </div>
+                <div style="font-family:'Righteous';font-size:80px; text-shadow: 2px 2px #ff0000">FairVoice Toolbox </div>
               <!--  <a class="btn btn-primary btn-xl text-uppercase js-scroll-trigger" href="#services">Tell Me More</a> -->
             </div>
         </header>
@@ -194,11 +195,11 @@
                  G. Medda,
                  G. Meloni,
                  M. Marras
-                 <a class="portfolio-link" data-toggle="modal"  href="#portfolioModal1">
+                 <a class="portfolio-link" data-toggle="modal"  href="#portfolioModal2">
                      <b>Improving Fairness in Speaker Recognition. </b>
                  </a> &nbsp;
                  In proceeding in Symposium on Pattern Recognition and Applications,  2020.
-                 <a a class="portfolio-link" data-toggle="modal"  href="#portfolioModal1">info</a>
+                 <a a class="portfolio-link" data-toggle="modal"  href="#portfolioModal2">info</a>
              </div>
       </div>
     </div>
@@ -251,15 +252,51 @@
                                        different demographic classes in order to assess how speaker verification models perform across users' groups. Experiments show that users belonging to certain demographic
                                       groups systematically experience higher error rates, highlighting the need of fairer speaker verification.</p>
                                     <p>Bibitex</p>
-                                    <p class="text-muted">@Article{
-                                      author       = "",
-                                      title        = "Exploring Algorithmic Fairness in Deep Speaker Verification.",
-                                      journal      = "",
-                                      year         = "2020",
-                                      publisher    = "",
-                                    }
-                                   </p>
-
+                                    <p class="text-muted">@article{
+                                        author={Fenu, G. and Lafhouli, H. and Marras, M.},
+                                        title={{Exploring Algorithmic Fairness in Deep Speaker Verification}},
+                                        journal="",
+                                        year={2020}
+                                        publisher={Proceedings of the 20th International Conference on Computational Science and its Applications (ICSSA2020). In Press. Springer}
+                                        }
+                                    </p>
+                                    <button class="btn btn-primary" type="button"><a class="pdf_link" href="https://drive.google.com/drive/folders/1Sz9J3LgjBkOoiIInicnlJ3gk1WArJNKD">PDF</a></button><br><br>
+                                    <button class="btn btn-primary" data-dismiss="modal" type="button"><i class="fas fa-times mr-1"></i>close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="portfolio-modal modal fade" id="portfolioModal2" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="close-modal" data-dismiss="modal"><img src="assets/img/close-icon.svg" alt="Close modal" /></div>
+                    <div class="container">
+                        <div class="row justify-content-center">
+                            <div class="col-lg-8">
+                                <div class="modal-body">
+                                    <!-- Project Details Go Here-->
+                                    <h3 class="text-uppercase">Improving Fairness in Speaker Recognition.</h3>
+                                    <p class="item-intro text-muted">The human voice conveys unique characteristics of an individual, making voice biometrics a key technology for verifying
+                                        identities in various industries. Despite the impressive progress of speaker recognition systems in terms of accuracy, a number of ethical and legal
+                                        concerns has been raised, specifically relating to the fairness of such systems. In this paper, we aim to explore the disparity in performance achieved
+                                        by state-of-the-art deep speaker recognition systems, when different groups of individuals characterized by a common sensitive attribute (e.g., gender)
+                                        are considered. In order to mitigate the unfairness we uncovered by means of an exploratory study, we investigate whether balancing the representation of
+                                        the different groups of individuals in the training set can lead to a more equal treatment of these demographic groups. Experiments on two state-of-the-art
+                                        neural architectures and a large-scale public dataset show that models trained with demographically-balanced training sets exhibit a fairer behavior on
+                                        different groups, while still being accurate. Our study is expected to provide a solid basis for instilling beyond-accuracy objectives (e.g., fairness)
+                                        in speaker recognition. </p>
+                                    <p>Bibitex</p>
+                                    <p class="text-muted">author={Fenu, G. and Medda, G. and Meloni, G. and Marras, M.},
+                                        title={{Improving Fairness in Speaker Recognition}},
+                                        journal="",
+                                        year={2020}
+                                        publisher={ Proceedings of the 20th International Conference on Computational Science and its Applications (ICSSA2020). In Press. Springer}
+                                        }
+                                    </p>
+                                    <button class="btn btn-primary" type="button"><a class="pdf_link" href="https://drive.google.com/drive/folders/1Sz9J3LgjBkOoiIInicnlJ3gk1WArJNKD">PDF</a></button><br><br>
                                     <button class="btn btn-primary" data-dismiss="modal" type="button"><i class="fas fa-times mr-1"></i>close</button>
                                 </div>
                             </div>
