@@ -10141,6 +10141,7 @@ header.masthead {
   text-align: center;
   color: #fff;
   background-image: url("../assets/img/bg_header_section.jpg");
+  opacity: 0.75;
   background-repeat: no-repeat;
   background-attachment: scroll;
   background-position: center center;
