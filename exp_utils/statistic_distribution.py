@@ -105,7 +105,7 @@ def countFAR(gbu_data, thr):
     for user in gbu_res.keys():
         far_res_users.append(gbu_res[user] / gbu_size[user])
 
-    return sum(far_res_users) / len(frr_res_users), far_res_users
+    return sum(far_res_users) / len(far_res_users), far_res_users
 
 
 def computeResultsFAR(path):
