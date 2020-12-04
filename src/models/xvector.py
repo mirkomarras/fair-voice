@@ -35,7 +35,31 @@ class XVector(Model):
         super().build(classes, loss, aggregation, vlad_clusters, ghost_clusters, weight_decay, augment)
         print('>', 'building', self.name, 'model on', classes, 'classes')
 
+        def g_loss():
+
+            def loss(y_true, y_pred):
+
+                sens_attr = tf.map_fn(lambda g: g == 1, y_true[:, :classes][:, 0], dtype=tf.bool)
+                y_true = y_true[:, classes:]
+
+                y_t_male = tf.gather(y_true, tf.reshape(tf.where(sens_attr), [-1]))
+                y_p_male = tf.gather(y_pred, tf.reshape(tf.where(sens_attr), [-1]))
+                not_sens_attr = tf.math.logical_not(sens_attr)
+                y_t_female = tf.gather(y_true, tf.reshape(tf.where(not_sens_attr), [-1]))
+                y_p_female = tf.gather(y_pred, tf.reshape(tf.where(not_sens_attr), [-1]))
+
+                cc_male = tf.keras.losses.categorical_crossentropy(y_t_male, y_p_male)
+                cc_female = tf.keras.losses.categorical_crossentropy(y_t_female, y_p_female)
+
+                cc_male = tf.keras.backend.mean(cc_male)
+                cc_female = tf.keras.backend.mean(cc_female)
+                return tf.keras.backend.square(cc_male-cc_female)
+
+            return loss
+
         input = tf.keras.Input(shape=(None, 24,))
+
+        #g_layer = tf.keras.Input(shape=(), dtype=tf.bool)
 
         #x = tf.keras.layers.Lambda(lambda x: get_tf_filterbanks(x), name='acoustic_layer')(input)
         x = input
@@ -70,9 +94,12 @@ class XVector(Model):
                                                beta_initializer=tf.constant_initializer(0.0))(x)
 
         if loss == 'softmax':
-            y = tf.keras.layers.Dense(classes, activation='softmax', kernel_initializer='orthogonal', use_bias=False,
+            y1 = tf.keras.layers.Dense(classes, activation='softmax', kernel_initializer='orthogonal', use_bias=False,
                                       kernel_regularizer=tf.keras.regularizers.l2(weight_decay),
-                                      bias_regularizer=tf.keras.regularizers.l2(weight_decay))(x)
+                                      bias_regularizer=tf.keras.regularizers.l2(weight_decay), name="fair")(x)
+            y2 = tf.keras.layers.Dense(classes, activation='softmax', kernel_initializer='orthogonal', use_bias=False,
+                                       kernel_regularizer=tf.keras.regularizers.l2(weight_decay),
+                                       bias_regularizer=tf.keras.regularizers.l2(weight_decay), name="categorical_cross")(x)
         elif loss == 'amsoftmax':
             x = tf.keras.layers.Lambda(lambda x: tf.keras.backend.l2_normalize(x, 1))(x)
             y = tf.keras.layers.Dense(classes, kernel_initializer='orthogonal', use_bias=False,
@@ -82,8 +109,8 @@ class XVector(Model):
         else:
             raise NotImplementedError()
 
-        self.model = tf.keras.models.Model(input, y, name='xvector_{}_{}'.format(loss, aggregation))
-        self.model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['acc'])
+        self.model = tf.keras.models.Model([input], [y1, y2], name='xvector_{}_{}'.format(loss, aggregation))
+        self.model.compile(optimizer='adam', loss=[g_loss(), 'categorical_crossentropy'], metrics=['acc'], loss_weight=[0.5, 0.5])
         print('>', 'built', self.name, 'model on', classes, 'classes')
 
 

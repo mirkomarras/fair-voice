@@ -1,0 +1,19 @@
+test file,network,train file,accuracy,distribution M/F,distribution Y/O
+English-test1,resnet50vox,English-Spanish-train1,983,N,N
+English-test1,resnet50vox,English-Spanish-train2,963,N,N
+English-test1,resnet50vox,English-Spanish-train3,970,Y,Y
+English-test2,resnet50vox,English-Spanish-train1,983,N,N
+English-test2,resnet50vox,English-Spanish-train2,963,N,N
+English-test2,resnet50vox,English-Spanish-train3,970,N,Y
+English-test3,resnet50vox,English-Spanish-train1,983,N,N
+English-test3,resnet50vox,English-Spanish-train2,963,N,N
+English-test3,resnet50vox,English-Spanish-train3,970,N,N
+Spanish-test1,resnet50vox,English-Spanish-train1,983,N,Y
+Spanish-test1,resnet50vox,English-Spanish-train2,963,Y,N
+Spanish-test1,resnet50vox,English-Spanish-train3,970,N,N
+Spanish-test2,resnet50vox,English-Spanish-train1,983,N,N
+Spanish-test2,resnet50vox,English-Spanish-train2,963,N,N
+Spanish-test2,resnet50vox,English-Spanish-train3,970,N,N
+Spanish-test3,resnet50vox,English-Spanish-train1,983,N,N
+Spanish-test3,resnet50vox,English-Spanish-train2,963,N,N
+Spanish-test3,resnet50vox,English-Spanish-train3,970,N,N

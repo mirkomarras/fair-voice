@@ -195,6 +195,27 @@ class Model(object):
         :param learning_rate:   Learning rate
         :param patience:        Number of epochs with non-improving EER willing to wait
         """
+
+        """
+        for i, y_true in train_data:
+            layer = tf.map_fn(lambda x: x == 1, y_true[0][:][:, :620][:,0], dtype=tf.bool)
+            # print(tf.where(layer))
+            print(y_true[0].shape)
+            print(y_true[0][:, 620:], y_true[0][:, 620:].shape)
+            y_true = y_true[0][:][:, 620:]
+            print(y_true, y_true.shape)
+            #print("y_true", y_true.shape)
+            #print(tf.where(layer))
+            #print(tf.math.logical_not(layer))
+            y_t_male = tf.gather(y_true, tf.reshape(tf.where(layer), [-1]))
+            #print(y_true)
+            print(y_t_male)
+            not_layer = tf.math.logical_not(layer)
+            y_t_female = tf.gather(y_true, tf.reshape(tf.where(not_layer), [-1]))
+            print(y_t_female)
+            exit()
+        """
+
         self.model.summary()
         print('>', 'training', self.name, 'model')
         schedule = StepDecay(init_alpha=learning_rate,
@@ -202,7 +223,7 @@ class Model(object):
         learning_rate = LearningRateScheduler(schedule)
 
         early_stopping = tf.keras.callbacks.EarlyStopping(
-            monitor='acc', baseline=0.95, patience=2, mode='auto')
+            monitor='accuracy', baseline=0.95, patience=2, mode='auto')
 
         folder_name = self.name + '_' + datetime.datetime.now().strftime('%d%m%Y_%H%M') + '_' + info.split('/')[-1][:-4]
         save_path = os.path.join(SAVE_PATH, folder_name)
@@ -211,7 +232,7 @@ class Model(object):
             os.makedirs(save_path)
 
         save_weight = ModelCheckpoint(os.path.join(save_path, 'weights-{epoch:02d}-{acc:.3f}.h5'),
-                                               monitor='acc',
+                                               monitor='accuracy',
                                                mode='max', save_best_only=True)
 
         callbacks = [learning_rate, save_weight, early_stopping]
