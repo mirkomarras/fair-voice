@@ -60,17 +60,17 @@ To download the Fair-Voice dataset click the reported link and follow the steps 
 
 1. Fill out the form you find via the link above;
 2. Download, in the project folder, the zip of the dataset whose link will be provided via email;
-3. Create the destination folder for the dataset and unzip the folder inside project:
+3. Create the destination folder for the dataset, merge the splits where `FairVoiceZIP.zip` is the first one and unzip the archive inside the folder:
     ```bash
-    $ mkdir FairVoice/ && unzip file.zip -d FairVoice
+    $ mkdir FairVoice && zip -s 0 FairVoiceZIP.zip --out FairVoice.zip && unzip FairVoice.zip -d FairVoice
     ```
     If the *unzip* command isn't already installed on your system, then run:
     ```bash
     $ sudo apt-get install unzip
     ```
-4. Remove the .zip file: 
+4. Remove the .zip files:
     ```bash
-    $ sudo rm file.zip
+    $ sudo rm FairVoiceZIP.z* FairVoice.zip
     ```
 
 ## Fair-Voice Data Folder Description 
