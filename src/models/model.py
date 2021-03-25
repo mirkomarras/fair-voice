@@ -25,9 +25,14 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 SAVE_PATH = '/home/meddameloni/dl-fair-voice/exp/trained_model/'
 RESULT_PATH = '/home/meddameloni/dl-fair-voice/exp/results/'
-RESULT_PATH_TRAIN3 = '/home/meddameloni/dl-fair-voice/exp/results/deep_res_EN-SP_train3/'
-RESULT_PATH_TRAIN_NO_PRIOR = '/home/meddameloni/dl-fair-voice/exp/results/trainSP-testEN/'
-RESULT_PATH_VOXCELEB = '/home/meddameloni/dl-fair-voice/exp/results/voxceleb_res/'
+RESULT_PATH_TRAIN3 = os.path.join(RESULT_PATH, 'deep_res_EN-SP_train3/')
+RESULT_PATH_TRAIN_NO_PRIOR = os.path.join(RESULT_PATH, 'trainSP-testEN/')
+RESULT_PATH_VOXCELEB = os.path.join(RESULT_PATH, 'voxceleb_res/')
+RESULT_PATH_RESNET50 = os.path.join(RESULT_PATH, 'resnet50vox_EN-SP/')
+RESULT_SECOND_STAGE = os.path.join(RESULT_PATH, 'second_stage/')
+RESULT_SECOND_STAGE_SN_RESNET = os.path.join(RESULT_PATH, 'second_stage/siamese_net/resnet34vox/first_stage/')
+RESULT_SECOND_STAGE_SN_XVECTOR = os.path.join(RESULT_PATH, 'second_stage/siamese_net/xvector/first_stage/')
+
 
 class StepDecay():
     def __init__(self, init_alpha=0.01, decay_factor=0.25, decay_step=10):
@@ -43,9 +48,9 @@ class StepDecay():
 
 
 class VladPooling(tf.keras.layers.Layer):
-    '''
+    """
     This layer follows the NetVlad, GhostVlad
-    '''
+    """
     def __init__(self, mode, k_centers, g_centers=0, **kwargs):
         self.k_centers = k_centers
         self.g_centers = g_centers
@@ -92,7 +97,7 @@ class VladPooling(tf.keras.layers.Layer):
         config = super().get_config()
         config['k_centers'] = self.k_centers
         config['g_centers'] = self.g_centers
-        config['mode']=self.mode
+        config['mode'] = self.mode
         return config
 
 
@@ -100,7 +105,7 @@ class Model(object):
     """
        Class to represent Speaker Verification (SV) models with model saving / loading and playback & recording capabilitie
     """
-    def __init__(self, name='', id=-1, noises=None, cache=None, n_seconds=3, sample_rate=16000, emb_size=512):
+    def __init__(self, name='', id=-1, noises=None, cache=None, n_seconds=3, sample_rate=16000, emb_size=512, loss_bal=[0.5,0.5]):
         """
         Method to initialize a speaker verification model that will be saved in 'data/pt_models/{name}'
         :param name:        String id for this model
@@ -117,6 +122,7 @@ class Model(object):
         self.n_seconds = n_seconds
         self.emb_size = emb_size
 
+        self.loss_bal = loss_bal if loss_bal is not None else [0.0, 1.0]
         self.name = name
         self.dir = os.path.join('.', 'data', 'pt_models', self.name)
         if not os.path.exists(self.dir):
@@ -125,8 +131,10 @@ class Model(object):
         if not os.path.exists(os.path.join(self.dir, 'v' + str('{:03d}'.format(self.id)))):
             os.makedirs(os.path.join(self.dir, 'v' +
                                      str('{:03d}'.format(self.id))))
+
     def get_model(self):
         return self.inference_model
+
     def build(self, classes=None, loss='softmax', aggregation='gvlad', vlad_clusters=2, ghost_clusters=8, weight_decay=1e-4, augment=0):
         """
         Method to build a speaker verification model that takes audio samples of shape (None, 1) and impulse flags (None, 3)
@@ -142,7 +150,6 @@ class Model(object):
         self.model = None
         self.inference = None
         self.classes = classes
-
 
     def save(self):
         """
@@ -175,7 +182,6 @@ class Model(object):
         else:
             print('>', 'no directory for', self.name, 'model at',
                   os.path.join(self.dir, 'v' + str('{:03d}'.format(self.id))))
-
 
     def embed(self, signal):
         """
@@ -223,20 +229,39 @@ class Model(object):
         learning_rate = LearningRateScheduler(schedule)
 
         early_stopping = tf.keras.callbacks.EarlyStopping(
-            monitor='accuracy', baseline=0.95, patience=2, mode='auto')
+            monitor='categorical_cross_accuracy', baseline=0.95, patience=2, mode='auto')
 
-        folder_name = self.name + '_' + datetime.datetime.now().strftime('%d%m%Y_%H%M') + '_' + info.split('/')[-1][:-4]
+        # current date to use for the folder name composition
+        current_date = datetime.datetime.now().strftime('%d%m%Y_%H%M')
+        # name of the CSV train file used
+        # train 1  --> balanced by user
+        # train 2  --> not balanced
+        # train 3  --> balanced by user and samples
+        train_file_name = info.split('/')[-1][:-4]
+        # composition of the string containing loss function balancing details
+        loss_balancing = ''
+        for index in range(len(self.loss_bal)):
+            if index != (len(self.loss_bal)-1):
+                loss_balancing += str(self.loss_bal[index]).replace('.','') + '_'
+            else:
+                loss_balancing += str(self.loss_bal[index]).replace('.','')
+
+        # Composition of the destination folder for the weight saved at every epoch
+        folder_name = self.name + '_' + \
+                      current_date + '_' + \
+                      train_file_name + '#' + \
+                      loss_balancing
         save_path = os.path.join(SAVE_PATH, folder_name)
 
         if not(os.path.exists(save_path)):
             os.makedirs(save_path)
 
-        save_weight = ModelCheckpoint(os.path.join(save_path, 'weights-{epoch:02d}-{acc:.3f}.h5'),
-                                               monitor='accuracy',
-                                               mode='max', save_best_only=True)
+        save_weight = ModelCheckpoint(os.path.join(save_path, 'weights-{epoch:02d}-{categorical_cross_accuracy:.3f}.h5'),
+                                      monitor='categorical_cross_accuracy',
+                                      mode='max', save_best_only=True)
 
         callbacks = [learning_rate, save_weight, early_stopping]
-        #num_nonimproving_steps, last_eer = 0, 1.0
+        # num_nonimproving_steps, last_eer = 0, 1.0
 
         for epoch in range(epochs):
             self.model.fit(train_data, steps_per_epoch=steps_per_epoch, initial_epoch=epoch, epochs=epoch+1, callbacks=callbacks)
@@ -257,7 +282,6 @@ class Model(object):
                 break
              """
         print('>', 'trained', self.name, 'model')
-
 
     def test(self, test_data):
         """
@@ -287,7 +311,6 @@ class Model(object):
         print('>', 'tested', self.name, 'model')
         return eer, thr_eer, thr_far1
 
-
     def test_and_save_on_csv(self, test_file, audio_dir, aggregation, model_path):
         """
         Method to test this model against verification attempts
@@ -301,14 +324,23 @@ class Model(object):
         if aggregation == 'vlad' or aggregation == 'gvlad':
             model = tf.keras.models.load_model(model_path, custom_objects={'VladPooling': VladPooling})
         else:
-            model = tf.keras.models.load_model(model_path)
-        if self.name == 'xvector':
-            inference_model = tf.keras.models.Model(inputs=model.get_input_at(0), outputs=model.layers[-4].get_output_at(0))
-        else:
-            inference_model = tf.keras.models.Model(inputs=model.get_input_at(0), outputs=model.layers[-2].get_output_at(0))
+            model = tf.keras.models.load_model(model_path,  custom_objects={'loss': lambda x, y: 0.0})
+
+        emb_layer = None
+        for layer in model.layers:
+            if layer.name == "embedding" or layer.name == "fc7":
+                emb_layer = layer
+                break
+
+        if emb_layer is None:
+            raise ValueError("No layer called embedding")
+
+        inference_model = tf.keras.models.Model(inputs=model.get_input_at(0), outputs=emb_layer.get_output_at(0))
+
         inference_model.summary()
         print('Start Testing')
         pairs = pd.read_csv(test_file)
+        index_len = len(pairs.index)
         for index, row in pairs.iterrows():
             if self.name == 'xvector':
                 audio_1 = decode_audio_fix_size(audio_dir+row['audio_1'], input_format='bank')
@@ -325,15 +357,39 @@ class Model(object):
                 emb2 = tf.keras.layers.Lambda(lambda emb2: K.l2_normalize(emb2, 1))(emb2)
 
             similarity = 1 - cosine(emb1, emb2)
-            print('PAIR', index+1, len(pairs.index), row['label'], round(similarity, 2))
+            if index % (index_len // 10) == 0:
+                print('PAIR', index+1, index_len, row['label'], round(similarity, 2))
             pairs.loc[index, 'simlarity'] = float("{0:.2f}".format(similarity))
 
+        """
+            Retrieving important information for the experiment:
+            - first_segment  -->  (train model name, date)
+            - second_segment -->  (epoch, accuracy)
+            - third_segment  -->  (loss balancing information)
+        """
 
-        path = RESULT_PATH_VOXCELEB + \
-               self.name + '_' + model_path.split('/')[-2].split('_')[-1] + '_' + \
-               model_path.split('/')[-1].split('-')[-1][2:-3] + '_' + \
-               datetime.datetime.now().strftime('%d%m%Y') + '_' + \
-               test_file.split('/')[-1][:-4] + '.csv'
+        first_segment, second_segment, third_segment = model_path.split('/')[-2].split('#')[0], \
+                                                       model_path.split('/')[-1], \
+                                                       model_path.split('/')[-2].split('#')[1]
+
+        train_model_name = first_segment.split('_')[-1]
+
+        epoch_time = second_segment.split('-')[1]
+        accuracy = second_segment.split('-')[-1].split('.')[-2]
+
+        loss_balancing = third_segment
+
+        current_date = datetime.datetime.now().strftime('%d%m%Y')
+
+        test_file_name = test_file.split('/')[-1][:-4]
+
+        path = RESULT_PATH + \
+               self.name + '_' + \
+               train_model_name + '@' + epoch_time + '_' + \
+               accuracy + '_' + \
+               current_date + '_' + \
+               test_file_name + \
+               '#' + loss_balancing + '.csv'
         pairs.to_csv(path, index=False)
 
     def impersonate(self, impostor_signal, threshold, policy, x_mv_test, y_mv_test, male_x_mv_test, female_x_mv_test, n_templates=10):

@@ -4,6 +4,7 @@
 import tensorflow as tf
 import numpy as np
 import tensorflow.keras.backend as K
+from .utils import fair_loss
 
 import os
 
@@ -17,8 +18,8 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 class ResNet34Vox(Model):
 
-    def __init__(self, name='resnet34vox', id='', noises=None, cache=None, n_seconds=3, sample_rate=16000):
-        super().__init__(name, id, noises, cache, n_seconds, sample_rate)
+    def __init__(self, name='resnet34vox', id='', noises=None, cache=None, n_seconds=3, sample_rate=16000, loss_bal=None):
+        super().__init__(name, id, noises, cache, n_seconds, sample_rate, loss_bal=loss_bal)
 
     def identity_block_2d(self, input_tensor, kernel_size, filters, stage, block, weight_decay,trainable):
 
@@ -123,7 +124,6 @@ class ResNet34Vox(Model):
         print('>', 'building', self.name, 'model on', classes, 'classes')
         bn_axis = 3
 
-
         spec = tf.keras.Input(shape=(257, 250,1))
 
         #spec = tf.keras.layers.Lambda(
@@ -210,12 +210,18 @@ class ResNet34Vox(Model):
                                    name='embedding')(x)
 
         if loss == 'softmax':
-                y = tf.keras.layers.Dense(classes, activation='softmax',
+                y1 = tf.keras.layers.Dense(classes, activation='softmax',
                                        kernel_initializer='orthogonal',
                                        use_bias=False, trainable=True,
                                        kernel_regularizer=tf.keras.regularizers.l2(weight_decay),
                                        bias_regularizer=tf.keras.regularizers.l2(weight_decay),
-                                       name='prediction')(x)
+                                       name='fair')(x)
+                y2 = tf.keras.layers.Dense(classes, activation='softmax',
+                                          kernel_initializer='orthogonal',
+                                          use_bias=False, trainable=True,
+                                          kernel_regularizer=tf.keras.regularizers.l2(weight_decay),
+                                          bias_regularizer=tf.keras.regularizers.l2(weight_decay),
+                                          name='categorical_cross')(x)
 
         elif loss == 'amsoftmax':
                 x_l2 = tf.keras.layers.Lambda(lambda x: K.l2_normalize(x, 1))(x)
@@ -227,5 +233,5 @@ class ResNet34Vox(Model):
                                        bias_regularizer=tf.keras.regularizers.l2(weight_decay),
                                        name='prediction')(x_l2)
 
-        self.model = tf.keras.models.Model(spec, y, name='resnet34vox_{}_{}'.format(loss, aggregation))
-        self.model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['acc'])
+        self.model = tf.keras.models.Model(spec, [y1, y2], name='resnet34vox_{}_{}'.format(loss, aggregation))
+        self.model.compile(optimizer='adam', loss=[fair_loss(classes), 'categorical_crossentropy'], metrics=['accuracy'], loss_weight=self.loss_bal)

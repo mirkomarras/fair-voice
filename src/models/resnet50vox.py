@@ -11,11 +11,12 @@ import random
 from models.model import VladPooling
 from models.model import Model
 from helpers.audio import play_n_rec, get_tf_spectrum
+from .utils import fair_loss
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
-class ResNet50Vox(Model):
 
+class ResNet50Vox(Model):
     """
        Class to represent Speaker Verification (SV) model based on the ResNet50 architecture - Embedding vectors of size 512 are returned
        Chung, J. S., Nagrani, A., & Zisserman, A. (2018).
@@ -23,8 +24,8 @@ class ResNet50Vox(Model):
        Proc. Interspeech 2018, 1086-1090.
     """
 
-    def __init__(self, name='resnet50vox', id='', noises=None, cache=None, n_seconds=3, sample_rate=16000):
-        super().__init__(name, id, noises, cache, n_seconds, sample_rate)
+    def __init__(self, name='resnet50vox', id='', noises=None, cache=None, n_seconds=3, sample_rate=16000, loss_bal=None):
+        super().__init__(name, id, noises, cache, n_seconds, sample_rate, loss_bal=loss_bal)
 
     def build(self, classes=None, loss='softmax', aggregation='avg', vlad_clusters=12, ghost_clusters=2, weight_decay=1e-4, augment=0):
         super().build(classes, loss, aggregation, vlad_clusters, ghost_clusters, weight_decay, augment)
@@ -54,16 +55,17 @@ class ResNet50Vox(Model):
         else:
             raise NotImplementedError()
 
-        e = tf.keras.layers.Dense(self.emb_size, activation='relu', kernel_initializer='orthogonal', use_bias=True, kernel_regularizer=tf.keras.regularizers.l2(weight_decay), bias_regularizer=tf.keras.regularizers.l2(weight_decay), name='fc7')(x)
+        e = tf.keras.layers.Dense(self.emb_size, activation='relu', kernel_initializer='orthogonal', use_bias=True, kernel_regularizer=tf.keras.regularizers.l2(weight_decay), bias_regularizer=tf.keras.regularizers.l2(weight_decay), name='embedding')(x)
 
         if loss == 'softmax':
-            y = tf.keras.layers.Dense(classes, activation='softmax', kernel_initializer='orthogonal', use_bias=False, kernel_regularizer=tf.keras.regularizers.l2(weight_decay), bias_regularizer=tf.keras.regularizers.l2(weight_decay), name='fc8')(e)
+            y1 = tf.keras.layers.Dense(classes, activation='softmax', kernel_initializer='orthogonal', use_bias=False, kernel_regularizer=tf.keras.regularizers.l2(weight_decay), bias_regularizer=tf.keras.regularizers.l2(weight_decay), name='fair')(e)
+            y2 = tf.keras.layers.Dense(classes, activation='softmax', kernel_initializer='orthogonal', use_bias=False, kernel_regularizer=tf.keras.regularizers.l2(weight_decay), bias_regularizer=tf.keras.regularizers.l2(weight_decay), name='categorical_cross')(e)
         elif loss == 'amsoftmax':
             x = tf.keras.layers.Lambda(lambda x: tf.keras.backend.l2_normalize(x, 1))(x)
             y = tf.keras.layers.Dense(classes, kernel_initializer='orthogonal', use_bias=False, kernel_constraint=tf.keras.constraints.unit_norm(), kernel_regularizer=tf.keras.regularizers.l2(weight_decay), bias_regularizer=tf.keras.regularizers.l2(weight_decay), name='fc8')(x)
         else:
             raise NotImplementedError()
 
-        self.model = tf.keras.models.Model(spec, y, name='resnet50vox_{}_{}'.format(loss, aggregation))
-        self.model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['acc'])
+        self.model = tf.keras.models.Model(spec, [y1, y2], name='resnet50vox_{}_{}'.format(loss, aggregation))
+        self.model.compile(optimizer='adam', loss=[fair_loss(classes), 'categorical_crossentropy'], metrics=['accuracy'], loss_weight=self.loss_bal)
         print('>', 'built', self.name, 'model on', classes, 'classes')

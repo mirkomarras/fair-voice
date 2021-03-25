@@ -10,6 +10,7 @@ import random
 
 from models.model import Model
 from helpers.audio import play_n_rec, get_tf_filterbanks
+from .utils import fair_loss
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
@@ -27,42 +28,18 @@ class XVector(Model):
        In: 2018 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP), 5329-5333. IEEE.
     """
 
-    def __init__(self, name='xvector', id='', noises=None, cache=None, n_seconds=3, sample_rate=16000):
-        super().__init__(name, id, noises, cache, n_seconds, sample_rate)
+    def __init__(self, name='xvector', id='', noises=None, cache=None, n_seconds=3, sample_rate=16000, loss_bal=None):
+        super().__init__(name, id, noises, cache, n_seconds, sample_rate, loss_bal=loss_bal)
         self.n_filters = 24
 
     def build(self, classes=None, loss='softmax', aggregation='avg', vlad_clusters=12, ghost_clusters=2, weight_decay=1e-4, augment=0):
         super().build(classes, loss, aggregation, vlad_clusters, ghost_clusters, weight_decay, augment)
         print('>', 'building', self.name, 'model on', classes, 'classes')
 
-        def g_loss():
+        _input = tf.keras.Input(shape=(None, 24,))
 
-            def loss(y_true, y_pred):
-
-                sens_attr = tf.map_fn(lambda g: g == 1, y_true[:, :classes][:, 0], dtype=tf.bool)
-                y_true = y_true[:, classes:]
-
-                y_t_male = tf.gather(y_true, tf.reshape(tf.where(sens_attr), [-1]))
-                y_p_male = tf.gather(y_pred, tf.reshape(tf.where(sens_attr), [-1]))
-                not_sens_attr = tf.math.logical_not(sens_attr)
-                y_t_female = tf.gather(y_true, tf.reshape(tf.where(not_sens_attr), [-1]))
-                y_p_female = tf.gather(y_pred, tf.reshape(tf.where(not_sens_attr), [-1]))
-
-                cc_male = tf.keras.losses.categorical_crossentropy(y_t_male, y_p_male)
-                cc_female = tf.keras.losses.categorical_crossentropy(y_t_female, y_p_female)
-
-                cc_male = tf.keras.backend.mean(cc_male)
-                cc_female = tf.keras.backend.mean(cc_female)
-                return tf.keras.backend.square(cc_male-cc_female)
-
-            return loss
-
-        input = tf.keras.Input(shape=(None, 24,))
-
-        #g_layer = tf.keras.Input(shape=(), dtype=tf.bool)
-
-        #x = tf.keras.layers.Lambda(lambda x: get_tf_filterbanks(x), name='acoustic_layer')(input)
-        x = input
+        # x = tf.keras.layers.Lambda(lambda x: get_tf_filterbanks(x), name='acoustic_layer')(input)
+        x = _input
         # Layer parameters
         layer_sizes = [512, 512, 512, 512, 3 * 512]
         kernel_sizes = [5, 5, 7, 1, 1]
@@ -88,7 +65,8 @@ class XVector(Model):
                                                beta_initializer=tf.constant_initializer(0.0))(x)
         x = tf.keras.layers.Dropout(0.1)(x)
 
-        x = tf.keras.layers.Dense(out_dim, name='fc7')(x)
+        # x = tf.keras.layers.Dense(out_dim, name='fc7')(x)
+        x = tf.keras.layers.Dense(out_dim, name='embedding')(x)
         x = tf.keras.layers.ReLU()(x)
         x = tf.keras.layers.BatchNormalization(epsilon=1e-3, gamma_initializer=tf.constant_initializer(1.0),
                                                beta_initializer=tf.constant_initializer(0.0))(x)
@@ -109,8 +87,8 @@ class XVector(Model):
         else:
             raise NotImplementedError()
 
-        self.model = tf.keras.models.Model([input], [y1, y2], name='xvector_{}_{}'.format(loss, aggregation))
-        self.model.compile(optimizer='adam', loss=[g_loss(), 'categorical_crossentropy'], metrics=['acc'], loss_weight=[0.5, 0.5])
+        self.model = tf.keras.models.Model([_input], [y1, y2], name='xvector_{}_{}'.format(loss, aggregation))
+        self.model.compile(optimizer='adam', loss=[fair_loss(classes), 'categorical_crossentropy'], metrics=['accuracy'], loss_weight=self.loss_bal)
         print('>', 'built', self.name, 'model on', classes, 'classes')
 
 
