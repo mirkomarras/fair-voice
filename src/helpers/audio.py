@@ -9,6 +9,7 @@ import random
 import math
 import os
 
+
 def decode_audio(fp, tgt_sample_rate=16000):
     """
     Function to decode an audio file
@@ -19,11 +20,13 @@ def decode_audio(fp, tgt_sample_rate=16000):
 
     assert tgt_sample_rate > 0
 
-     #audio_sf, audio_sr = sf.read(fp, dtype='float32')
-    #if audio_sf.ndim > 1 or audio_sr != tgt_sample_rate: # Is not mono
+    # audio_sf, audio_sr = sf.read(fp, dtype='float32')
+    # if audio_sf.ndim > 1 or audio_sr != tgt_sample_rate: # Is not mono
     audio_sf, new_sample_rate = librosa.load(fp, sr=tgt_sample_rate, mono=True)
 
     return audio_sf
+
+
 def decode_audio_fix_size(fp, sample_rate=16000, n_seconds=3, input_format='spec'):
     """
     Function to decode an audio file
@@ -62,7 +65,7 @@ def decode_audio_fix_size(fp, sample_rate=16000, n_seconds=3, input_format='spec
     return output
 
 
-def decode_audio(fp, tgt_sample_rate=16000):
+def _decode_audio(fp, tgt_sample_rate=16000):
     """
     Function to decode an audio file
     :param fp:              File path to the audio sample
@@ -73,10 +76,11 @@ def decode_audio(fp, tgt_sample_rate=16000):
     assert tgt_sample_rate > 0
 
     audio_sf, audio_sr = sf.read(fp, dtype='float32')
-    if audio_sf.ndim > 1 or audio_sr != tgt_sample_rate: # Is not mono
+    if audio_sf.ndim > 1 or audio_sr != tgt_sample_rate:  # Is not mono
         audio_sf, new_sample_rate = librosa.load(fp, sr=tgt_sample_rate, mono=True)
 
     return audio_sf
+
 
 def load_noise_paths(noise_dir):
     """
@@ -98,6 +102,7 @@ def load_noise_paths(noise_dir):
 
     return noise_paths
 
+
 def cache_noise_data(noise_paths, sample_rate=16000):
     """
     Function to decode noise audio samples
@@ -114,7 +119,9 @@ def cache_noise_data(noise_paths, sample_rate=16000):
             noise_cache[nf] = decode_audio(nf, tgt_sample_rate=sample_rate).reshape((-1, 1, 1))
 
     return noise_cache
-def get_tf_spectrum2(signal,spec_len=250, sample_rate=16000, win_length=400, hop_length=160, n_fft=512,mode='train'):
+
+
+def get_tf_spectrum2(signal, spec_len=250, win_length=400, hop_length=160, n_fft=512,mode='train'):
     """
     Function to compute a tensorflow spectrum from signal
     :param signal:          Audio signal from which the spectrum will be extracted  - shape (None, 1)
@@ -225,6 +232,7 @@ def get_tf_filterbanks(signal, sample_rate=16000, frame_size=0.025, frame_stride
 
     return normalized_log_mel_spectrum
 
+
 def play_n_rec(inputs, noises, cache, noise_strength='random'):
     """
     Function to add playback & recording simulation to a signal
@@ -251,24 +259,25 @@ def play_n_rec(inputs, noises, cache, noise_strength='random'):
         speaker_output = tf.add(speaker_output, noise_tensor)
 
         speaker_flag = tf.math.multiply(speaker_output, tf.expand_dims(tf.expand_dims(impulse[:, 0], 1), 1))
-        output_flag = tf.math.multiply(output, tf.expand_dims(tf.expand_dims(tf.math.abs(tf.math.subtract(impulse[:, 0],1)), 1), 1))
+        output_flag = tf.math.multiply(output, tf.expand_dims(tf.expand_dims(tf.math.abs(tf.math.subtract(impulse[:, 0], 1)), 1), 1))
         output = tf.math.add(speaker_flag, output_flag)
 
         room = np.array(cache[random.choice(noises['room'])], dtype=np.float32)
         room_output = tf.nn.conv1d(tf.pad(output, [[0, 0], [0, tf.shape(room)[0]-1], [0, 0]], 'constant'), room, 1, padding='VALID')
 
         room_flag = tf.math.multiply(room_output, tf.expand_dims(tf.expand_dims(impulse[:, 1], 1), 1))
-        output_flag = tf.math.multiply(output, tf.expand_dims(tf.expand_dims(tf.math.abs(tf.math.subtract(impulse[:, 1],1)), 1), 1))
+        output_flag = tf.math.multiply(output, tf.expand_dims(tf.expand_dims(tf.math.abs(tf.math.subtract(impulse[:, 1], 1)), 1), 1))
         output = tf.math.add(room_flag, output_flag)
 
         microphone = np.array(cache[random.choice(noises['microphone'])], dtype=np.float32)
         microphone_output = tf.nn.conv1d(tf.pad(output, [[0, 0], [0, tf.shape(microphone)[0]-1], [0, 0]], 'constant'), microphone, 1, padding='VALID')
 
         microphone_flag = tf.math.multiply(microphone_output, tf.expand_dims(tf.expand_dims(impulse[:, 2], 1), 1))
-        output_flag = tf.math.multiply(output, tf.expand_dims(tf.expand_dims(tf.math.abs(tf.math.subtract(impulse[:, 2],1)), 1), 1))
+        output_flag = tf.math.multiply(output, tf.expand_dims(tf.expand_dims(tf.math.abs(tf.math.subtract(impulse[:, 2], 1)), 1), 1))
         output = tf.math.add(microphone_flag, output_flag)
 
     return output
+
 
 def invert_spectrum_griffin_lim(slice_len, x_mag, num_fft, num_hop, ngl):
     """
@@ -282,21 +291,22 @@ def invert_spectrum_griffin_lim(slice_len, x_mag, num_fft, num_hop, ngl):
     """
     x = tf.complex(x_mag, tf.zeros_like(x_mag))
 
-    def b(i, x_best):
-        x = tf.signal.inverse_stft(x_best, num_fft, num_hop)
-        x_est = tf.signal.stft(x, num_fft, num_hop)
+    def b(_i, x_best):
+        _x = tf.signal.inverse_stft(x_best, num_fft, num_hop)
+        x_est = tf.signal.stft(_x, num_fft, num_hop)
         phase = x_est / tf.cast(tf.maximum(1e-8, tf.math.abs(x_est)), tf.complex64)
-        x_best = x * phase
-        return i + 1, x_best
+        x_best = _x * phase
+        return _i + 1, x_best
 
     i = tf.constant(0)
-    c = lambda i, _: tf.math.less(i, ngl)
+    c = lambda _i, _: tf.math.less(_i, ngl)
     _, x = tf.while_loop(c, b, [i, x], back_prop=False)
 
     x = tf.signal.inverse_stft(x, num_fft, num_hop)
     x = x[:, :slice_len]
 
     return x
+
 
 def spectrum_to_signal(slice_len, x_norm, x_mean, x_std, num_fft=256, num_hop=128, ngl=16, clip_nstd=3.):
     """

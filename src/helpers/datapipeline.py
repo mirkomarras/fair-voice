@@ -8,7 +8,15 @@ import random
 from helpers.audio import decode_audio, get_tf_spectrum,get_tf_spectrum2, get_tf_filterbanks
 
 
-def data_pipeline_generator_verifier(x, y, gender, classes, sample_rate=16000, n_seconds=2,input_format='aud',num_fft=512,spec_len=250):
+def data_pipeline_generator_verifier(x,
+                                     y,
+                                     gender,
+                                     classes,
+                                     sample_rate=16000,
+                                     n_seconds=2,
+                                     input_format='aud',
+                                     num_fft=512,
+                                     spec_len=250):
     """
     Function to simulate a (signal, impulse_flags), label generator for training a verifier
     :param x:           List of audio paths
@@ -36,29 +44,39 @@ def data_pipeline_generator_verifier(x, y, gender, classes, sample_rate=16000, n
             start_sample = 0
             end_sample = start_sample + sample_rate*n_seconds
 
-
-        input = audio[start_sample:end_sample]
+        _input = audio[start_sample:end_sample]
         if input_format == 'spec':
-            spectrogram = get_tf_spectrum2(input, spec_len=spec_len, n_fft=num_fft)
-            input = np.expand_dims(spectrogram, axis=2)
+            spectrogram = get_tf_spectrum2(_input, spec_len=spec_len, n_fft=num_fft)
+            _input = np.expand_dims(spectrogram, axis=2)
         if input_format == 'bank':
-            input = np.expand_dims(input, axis=[0, 2])
-            input = np.float32(input)
-            filterbank = get_tf_filterbanks(input)
-            input = np.squeeze(filterbank)
+            _input = np.expand_dims(_input, axis=[0, 2])
+            _input = np.float32(_input)
+            filterbank = get_tf_filterbanks(_input)
+            _input = np.squeeze(filterbank)
         elif input_format == 'aud':
-            input = np.expand_dims(input, axis=1)
+            _input = np.expand_dims(_input, axis=1)
 
         label = y[index]
         impulse = np.random.randint(2, size=3)
 
-        #yield {'input1': audio, 'input_2': impulse}, tf.keras.utils.to_categorical(label, num_classes=classes, dtype='float32')
-        #random.randint(0,classes-1)
-        yield input, [gender[index] if i == 0 else -1 for i in range(classes)], tf.keras.utils.to_categorical(label, num_classes=classes, dtype='int32')
+        # yield {'input1': audio, 'input_2': impulse}, tf.keras.utils.to_categorical(label, num_classes=classes, dtype='float32')
+        # random.randint(0,classes-1)
+        yield _input, [gender[index] if i == 0 else -1 for i in range(classes)], tf.keras.utils.to_categorical(label, num_classes=classes, dtype='int32')
     raise StopIteration()
 
 
-def data_pipeline_verifier(x, y, g, classes, sample_rate=16000, n_seconds=3, batch=64, prefetch=1024,dim=[None,None],input_format='aud',num_fft=512,spec_len=250):
+def data_pipeline_verifier(x,
+                           y,
+                           g,
+                           classes,
+                           sample_rate=16000,
+                           n_seconds=3,
+                           batch=64,
+                           prefetch=1024,
+                           dim=None,
+                           input_format='aud',
+                           num_fft=512,
+                           spec_len=250):
     """
     Function to create a tensorflow data pipeline for training a verifier
     :param x:           List of audio paths
@@ -71,16 +89,32 @@ def data_pipeline_verifier(x, y, g, classes, sample_rate=16000, n_seconds=3, bat
     :param prefetch:    Number of prefetched batches
     :return:            Data pipeline
     """
+    dim = [None, None] if dim is None else dim
+
     print('Enter verifier..')
-    dataset = tf.data.Dataset.from_generator(lambda: data_pipeline_generator_verifier(x, y, g, classes, sample_rate=sample_rate, n_seconds=n_seconds, input_format=input_format,num_fft=num_fft,spec_len=spec_len), \
-     output_types=(tf.float32, tf.int32, tf.int32), output_shapes=(dim, [classes], [classes]))
+    dataset = tf.data.Dataset.from_generator(
+        lambda: data_pipeline_generator_verifier(
+            x,
+            y,
+            g,
+            classes,
+            sample_rate=sample_rate,
+            n_seconds=n_seconds,
+            input_format=input_format,
+            num_fft=num_fft,
+            spec_len=spec_len
+        ),
+        output_types=(tf.float32, tf.int32, tf.int32),
+        output_shapes=(dim, [classes], [classes])
+    )
+
     print(dataset)
-    #dataset = dataset.map(lambda x, y: ({'input_1': tf.squeeze(x['input_1'], axis=0), 'input_2': x['input_2']}, y))
-    dataset = dataset.map(lambda x, g, y: (x, (tf.concat([g,y], axis=0),y)))
+    # dataset = dataset.map(lambda x, y: ({'input_1': tf.squeeze(x['input_1'], axis=0), 'input_2': x['input_2']}, y))
+    dataset = dataset.map(lambda _x, _g, _y: (_x, (tf.concat([_g, _y], axis=0), _y)))
     dataset = dataset.batch(batch)
     dataset = dataset.prefetch(prefetch)
 
-    #print(list(dataset))
+    # print(list(dataset))
 
     return dataset
 
@@ -105,6 +139,7 @@ def data_pipeline_generator_gan(x, slice_len, sample_rate=16000):
 
     raise StopIteration()
 
+
 def data_pipeline_gan(x, slice_len, sample_rate=16000, batch=64, prefetch=1024, output_type='raw'):
     """
     Function to create a tensorflow data pipeline for training a gan
@@ -116,20 +151,23 @@ def data_pipeline_gan(x, slice_len, sample_rate=16000, batch=64, prefetch=1024, 
     :return:            Data pipeline
     """
 
-    dataset = tf.data.Dataset.from_generator(lambda: data_pipeline_generator_gan(x, slice_len=slice_len, sample_rate=sample_rate),
-                                             output_types=(tf.float32),
-                                             output_shapes=([None, slice_len, 1]))
+    dataset = tf.data.Dataset.from_generator(
+        lambda: data_pipeline_generator_gan(x, slice_len=slice_len, sample_rate=sample_rate),
+        output_types=(tf.float32,),
+        output_shapes=([None, slice_len, 1])
+    )
 
-    dataset = dataset.map(lambda x: tf.squeeze(x, axis=0))
+    dataset = dataset.map(lambda y: tf.squeeze(y, axis=0))
     dataset = dataset.batch(batch)
 
     if output_type == 'spectrum':
-        dataset = dataset.map(lambda x: tf.pad(x, [[0, 0], [0, 128], [0, 0]], 'CONSTANT'))
-        dataset = dataset.map(lambda x: get_tf_spectrum(x, frame_size=0.016, frame_stride=0.008, num_fft=256))
+        dataset = dataset.map(lambda y: tf.pad(y, [[0, 0], [0, 128], [0, 0]], 'CONSTANT'))
+        dataset = dataset.map(lambda y: get_tf_spectrum(y, frame_size=0.016, frame_stride=0.008, num_fft=256))
 
     dataset = dataset.prefetch(prefetch)
 
     return dataset
+
 
 def data_pipeline_generator_mv(x, sample_rate=16000, n_seconds=3):
     """
@@ -151,6 +189,7 @@ def data_pipeline_generator_mv(x, sample_rate=16000, n_seconds=3):
 
     raise StopIteration()
 
+
 def data_pipeline_mv(x, sample_rate=16000, n_seconds=3, batch=64, prefetch=1024):
     """
     Function to create a tensorflow data pipeline for training a master voice vocoder
@@ -162,11 +201,13 @@ def data_pipeline_mv(x, sample_rate=16000, n_seconds=3, batch=64, prefetch=1024)
     :return:            Data pipeline
     """
 
-    dataset = tf.data.Dataset.from_generator(lambda: data_pipeline_generator_mv(x, sample_rate=sample_rate, n_seconds=n_seconds),
-                                             output_types=(tf.float32),
-                                             output_shapes=([None, sample_rate*n_seconds, 1]))
+    dataset = tf.data.Dataset.from_generator(
+        lambda: data_pipeline_generator_mv(x, sample_rate=sample_rate, n_seconds=n_seconds),
+        output_types=(tf.float32,),
+        output_shapes=([None, sample_rate*n_seconds, 1])
+    )
 
-    dataset = dataset.map(lambda x: tf.squeeze(x, axis=0))
+    dataset = dataset.map(lambda y: tf.squeeze(y, axis=0))
     dataset = dataset.batch(batch)
     dataset = dataset.prefetch(prefetch)
 

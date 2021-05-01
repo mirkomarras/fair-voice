@@ -8,11 +8,12 @@ import os
 
 from helpers.audio import decode_audio
 
-def get_mv_analysis_users(mv_analysis_path, type='all'):
+
+def get_mv_analysis_users(mv_analysis_path, setup_type='all'):
     """
     Function to load the list of users related to master voice analysis
     :param mv_analysis_path:    File path to master voice analysis metadata
-    :param type:                Setup for which master-voice-used users will be retrieved ['train', 'test', 'all']
+    :param setup_type:                Setup for which master-voice-used users will be retrieved ['train', 'test', 'all']
     :return:                    List of users
     """
 
@@ -20,19 +21,20 @@ def get_mv_analysis_users(mv_analysis_path, type='all'):
 
     mv_analysis_data = np.load(mv_analysis_path)
 
-    if type in ['all', 'train']:
+    if setup_type in ['all', 'train']:
         print('Load train user ids for mv analysis')
         train_users = list(np.unique([path.split('/')[1] for path in mv_analysis_data['x_train']]))
         output_users = output_users + train_users
         print('>', 'found mv analysis train users', len(train_users))
 
-    if type in ['all', 'test']:
+    if setup_type in ['all', 'test']:
         print('Load test user ids for mv analysis')
         test_users = list(np.unique([path.split('/')[1] for path in mv_analysis_data['x_test']]))
         output_users = output_users + test_users
         print('>', 'found mv analysis test users', len(test_users))
 
     return output_users
+
 
 def load_data_set(audio_dir, mv_user_ids, include=False):
     """
@@ -62,7 +64,8 @@ def load_data_set(audio_dir, mv_user_ids, include=False):
 
     return x, y
 
-def load_data_from_csv(path_file, base_path, sample='audio', labels='label'):
+
+def load_data_from_csv(path_file, base_path, sample='audio'):
     """
         Function permit to load an audio dataset from csv
         :args                   Contains both path of  file and the folder of file audio
@@ -70,7 +73,7 @@ def load_data_from_csv(path_file, base_path, sample='audio', labels='label'):
         :label                  Column that contains labels
         :return:                (List of audio file paths, List of user labels)
     """
-    print('> laod data from csv in path {}'.format(path_file))
+    print('> load data from csv in path {}'.format(path_file))
     df = pd.read_csv(path_file, encoding='latin1', error_bad_lines=False, warn_bad_lines=False)
     x = np.array([os.path.join(base_path, string) for string in df[sample]])
     y = np.array([string for string in df['label']])
@@ -89,7 +92,7 @@ def filter_by_gender(paths, labels, meta_file, gender='neutral'):
 
     print('Filter data sets by gender', gender)
     data_set_df = pd.read_csv(meta_file, delimiter=' ')
-    gender_map = {k:v for k, v in zip(data_set_df['id'].values, data_set_df['gender'].values)}
+    gender_map = {k: v for k, v in zip(data_set_df['id'].values, data_set_df['gender'].values)}
 
     filtered_paths = []
     filtered_labels = []
@@ -109,19 +112,19 @@ def filter_by_gender(paths, labels, meta_file, gender='neutral'):
 
     return paths, labels
 
-def load_data_raw(base_path, trials_path, n_pairs=10, sample_rate=16000, n_seconds=3, print_interval=100):
+
+def load_data_raw(base_path, trials_path, n_pairs=10, sample_rate=16000, print_interval=100):
     """
     Function to load raw paired audio samples for verification
     :param base_path:       Base path to the dataset samples
     :param trials_path:     Path to the list of trial pairs
     :param n_pairs:         Number of pairs to be loaded
     :param sample_rate:     Sample rate of the audio files to be processed
-    :param n_seconds:       Max number of seconds of an audio sample to be processed
     :param print_interval:  Print interval (verbosity)
     :return:                (list of audio samples, list of audio samples), labels
     """
 
-    pairs = pd.read_csv(trials_path, names=['target','path_1','path_2'], delimiter=' ')
+    pairs = pd.read_csv(trials_path, names=['target', 'path_1', 'path_2'], delimiter=' ')
     n_real_pairs = n_pairs if n_pairs > 0 else len(pairs['target'])
 
     y = pairs['target'].values[:n_real_pairs]
@@ -137,6 +140,7 @@ def load_data_raw(base_path, trials_path, n_pairs=10, sample_rate=16000, n_secon
         x2.append(decode_audio(os.path.join(base_path, path_2), tgt_sample_rate=sample_rate).reshape((-1, 1)))
 
     return (x1, x2), y
+
 
 def load_val_data(base_path, trials_path, n_pairs=10, sample_rate=16000, n_seconds=3):
     """
@@ -157,6 +161,7 @@ def load_val_data(base_path, trials_path, n_pairs=10, sample_rate=16000, n_secon
 
     return (x1_val, x2_val), y_val
 
+
 def load_test_data(base_path, trials_path, n_pairs=10, sample_rate=16000, n_seconds=3):
     """
     Function load raw audio samples for testing
@@ -176,7 +181,8 @@ def load_test_data(base_path, trials_path, n_pairs=10, sample_rate=16000, n_seco
 
     return (x1_test, x2_test), y_test
 
-def load_test_from_csv(path_file,base_path,sample_1='audio_1',sample_2='audio_2'):
+
+def load_test_from_csv(path_file, base_path, sample_1='audio_1', sample_2='audio_2'):
     """
        Function permit to load an audio test set from csv
         :args                   Contains both path of file and the folder of file audio
@@ -185,20 +191,18 @@ def load_test_from_csv(path_file,base_path,sample_1='audio_1',sample_2='audio_2'
         :label                  Column that contains labels
     :return:                (list of audio samples, list of audio samples), labels
     """
-    x1=[]
-    x2=[]
+    x1 = []
+    x2 = []
     print('Loading testing data')
-    df=pd.read_csv(path_file,encoding='latin1', error_bad_lines=False, warn_bad_lines=False)
+    df = pd.read_csv(path_file, encoding='latin1', error_bad_lines=False, warn_bad_lines=False)
    
-    for path_1 in  df[sample_1]:
-    	x1.append(decode_audio(os.path.join(base_path, path_1)).reshape((-1, 1)))
+    for path_1 in df[sample_1]:
+        x1.append(decode_audio(os.path.join(base_path, path_1)).reshape((-1, 1)))
     for path_2 in df[sample_2]:
-    	x2.append(decode_audio(os.path.join(base_path, path_2)).reshape((-1, 1)))
-    y= np.array([string for string in df['label']])
-
+        x2.append(decode_audio(os.path.join(base_path, path_2)).reshape((-1, 1)))
+    y = np.array([string for string in df['label']])
 
     return (x1, x2), y
-
 
 
 def load_mv_data(mv_analysis_path, mv_base_path, audio_meta, sample_rate=16000, n_seconds=3, n_templates=10):
@@ -220,7 +224,7 @@ def load_mv_data(mv_analysis_path, mv_base_path, audio_meta, sample_rate=16000, 
     print('> found', len(mv_paths), 'paths from', len(np.unique(mv_labels)), 'users')
 
     data_set_df = pd.read_csv(audio_meta, delimiter=' ')
-    gender_map = {k:v for k, v in zip(data_set_df['id'].values, data_set_df['gender'].values)}
+    gender_map = {k: v for k, v in zip(data_set_df['id'].values, data_set_df['gender'].values)}
 
     x_mv_test, y_mv_test, male_x_mv_test, female_x_mv_test = [], [], [], []
     samples_per_user = int(len(mv_paths) // len(np.unique(mv_labels)))
@@ -238,7 +242,7 @@ def load_mv_data(mv_analysis_path, mv_base_path, audio_meta, sample_rate=16000, 
         else:
             female_x_mv_test.append(class_index)
 
-        print('\r> loaded', (class_index+1)*n_templates, '/', len(np.unique(mv_labels))*n_templates, 'audio files', end='')
+        print('\r> loaded', (class_index+1) * n_templates, '/', len(np.unique(mv_labels)) * n_templates, 'audio files', end='')
 
     print()
 

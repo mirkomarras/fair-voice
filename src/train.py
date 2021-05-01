@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 import argparse
 import os
+from typing import Sequence
 
 from helpers.datapipeline import data_pipeline_generator_verifier, data_pipeline_verifier
 from helpers.dataset import get_mv_analysis_users, load_data_set, load_val_data, load_data_from_csv, load_test_from_csv
@@ -44,10 +45,11 @@ def main():
     # Parameters for validation
     parser.add_argument('--val_base_path', dest='val_base_path', default='../data/vs_voxceleb1/test', type=str, action='store', help='Base path for validation trials')
     parser.add_argument('--val_pair_path', dest='val_pair_path', default='../data/ad_voxceleb12/vox1_trial_pairs.csv', type=str, action='store', help='CSV file label, path_1, path_2 triplets')
-    parser.add_argument('--train_csv_path', dest='train_csv_path', default='../../dl-fair-voice/exp/train/English-train1.csv', type=str, action='store', help='Train file csv')
+    parser.add_argument('--train_csv_path', dest='train_csv_path', default='/home/meddameloni/dl-fair-voice/exp/train/English-train2.csv', type=str, action='store', help='Train file csv')
     parser.add_argument('--test_csv_path', dest='test_csv_path', default='../meta/test.csv', type=str, action='store', help='Test file csv')
     parser.add_argument('--from_csv', dest='from_csv', default=1, choices=[0, 1], type=int, action='store', help='')
     parser.add_argument('--val_n_pair', dest='val_n_pair', default=0, type=int, action='store', help='Number of validation pairs')
+    parser.add_argument('--loss_bal', dest='loss_bal',nargs="*", default=[0.0, 1.0], type=float, action='store', help='Level of balancing between loss functions')
 
     # Parameters for training
     parser.add_argument('--audio_dir', dest='audio_dir', default='/home/meddameloni/FairVoice/', type=str, action='store', help='Comma-separated audio data directories')
@@ -81,6 +83,7 @@ def main():
     print('>', 'Val pairs dataset path: {}'.format(args.val_base_path))
     print('>', 'Val pairs path: {}'.format(args.val_pair_path))
     print('>', 'Number of val pairs: {}'.format(args.val_n_pair))
+    print('>', 'Balancing Level: {}'.format(args.loss_bal))
 
     print('>', 'Audio dir: {}'.format(args.audio_dir))
     print('>', 'Master voice data path: {}'.format(args.mv_data_path))
@@ -183,8 +186,10 @@ def main():
 
     available_nets = {'xvector': XVector, 'vggvox': VggVox, 'resnet50vox': ResNet50Vox, 'resnet34vox': ResNet34Vox}
     model = available_nets[args.net.split('/')[0]](
-        id=(int(args.net.split('/')[1].replace('v', '')) if '/v' in args.net else -1), n_seconds=args.n_seconds,
-        sample_rate=args.sample_rate)
+        id=(int(args.net.split('/')[1].replace('v', '')) if '/v' in args.net else -1),
+        n_seconds=args.n_seconds,
+        sample_rate=args.sample_rate,
+        loss_bal=args.loss_bal)
     model.build(classes=classes, loss=args.loss, aggregation=args.aggregation, vlad_clusters=args.vlad_clusters,
                 ghost_clusters=args.ghost_clusters, weight_decay=args.weight_decay, augment=args.augment)
     model.train(train_data, x_test, steps_per_epoch=len(x_train) // args.batch, epochs=args.n_epochs,
