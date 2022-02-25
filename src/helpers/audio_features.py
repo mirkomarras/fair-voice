@@ -74,74 +74,76 @@ class AudioFeatureExtractor(object):
 
     @property
     def jitter_localabsolute(self, f0min=F0_MIN, f0max=F0_MAX):
-        pointProcess = call(self._audio_parselmouth, "To PointProcess (periodic, cc)", f0min, f0max)
-        return call(pointProcess, "Get jitter (local, absolute)", 0, 0, 0.0001, 0.02, 1.3)
+        pointProcess = parselmouth.call(self._audio_parselmouth, "To PointProcess (periodic, cc)", f0min, f0max)
+        return parselmouth.call(pointProcess, "Get jitter (local, absolute)", 0, 0, 0.0001, 0.02, 1.3)
 
     @property
     def jitter_local(self, f0min=F0_MIN, f0max=F0_MAX):
-        pointProcess = call(self._audio_parselmouth, "To PointProcess (periodic, cc)", f0min, f0max)
-        return call(pointProcess, "Get jitter (local)", 0, 0, 0.0001, 0.02, 1.3)
+        pointProcess = parselmouth.call(self._audio_parselmouth, "To PointProcess (periodic, cc)", f0min, f0max)
+        return parselmouth.call(pointProcess, "Get jitter (local)", 0, 0, 0.0001, 0.02, 1.3)
 
     @property
     def jitter_rap(self, f0min=F0_MIN, f0max=F0_MAX):
-        pointProcess = call(self._audio_parselmouth, "To PointProcess (periodic, cc)", f0min, f0max)
-        return call(pointProcess, "Get jitter (rap)", 0, 0, 0.0001, 0.02, 1.3)
+        pointProcess = parselmouth.call(self._audio_parselmouth, "To PointProcess (periodic, cc)", f0min, f0max)
+        return parselmouth.call(pointProcess, "Get jitter (rap)", 0, 0, 0.0001, 0.02, 1.3)
 
     @property
     def jitter_ppq5(self, f0min=F0_MIN, f0max=F0_MAX):
-        pointProcess = call(self._audio_parselmouth, "To PointProcess (periodic, cc)", f0min, f0max)
-        return call(pointProcess, "Get jitter (ppq5)", 0, 0, 0.0001, 0.02, 1.3)
+        pointProcess = parselmouth.call(self._audio_parselmouth, "To PointProcess (periodic, cc)", f0min, f0max)
+        return parselmouth.call(pointProcess, "Get jitter (ppq5)", 0, 0, 0.0001, 0.02, 1.3)
 
     @property
     def jitter_ddp(self, f0min=F0_MIN, f0max=F0_MAX):
-        pointProcess = call(self._audio_parselmouth, "To PointProcess (periodic, cc)", f0min, f0max)
-        return call(pointProcess, "Get jitter (ddp)", 0, 0, 0.0001, 0.02, 1.3)
+        pointProcess = parselmouth.call(self._audio_parselmouth, "To PointProcess (periodic, cc)", f0min, f0max)
+        return parselmouth.call(pointProcess, "Get jitter (ddp)", 0, 0, 0.0001, 0.02, 1.3)
 
     @property
     def shimmer_localdB(self, f0min=F0_MIN, f0max=F0_MAX):
-        pointProcess = call(self._audio_parselmouth, "To PointProcess (periodic, cc)", f0min, f0max)
-        return call([self._audio_parselmouth, pointProcess], "Get shimmer (local_dB)", 0, 0, 0.0001, 0.02, 1.3, 1.6)
+        pointProcess = parselmouth.call(self._audio_parselmouth, "To PointProcess (periodic, cc)", f0min, f0max)
+        return parselmouth.call([self._audio_parselmouth, pointProcess], "Get shimmer (local_dB)", 0, 0, 0.0001, 0.02, 1.3, 1.6)
 
     @property
     def shimmer_local(self, f0min=F0_MIN, f0max=F0_MAX):
-        pointProcess = call(self._audio_parselmouth, "To PointProcess (periodic, cc)", f0min, f0max)
-        return call([self._audio_parselmouth, pointProcess], "Get shimmer (local)", 0, 0, 0.0001, 0.02, 1.3, 1.6)
+        pointProcess = parselmouth.call(self._audio_parselmouth, "To PointProcess (periodic, cc)", f0min, f0max)
+        return parselmouth.call([self._audio_parselmouth, pointProcess], "Get shimmer (local)", 0, 0, 0.0001, 0.02, 1.3, 1.6)
 
     @property
     def shimmer_apq3(self, f0min=F0_MIN, f0max=F0_MAX):
-        pointProcess = call(self._audio_parselmouth, "To PointProcess (periodic, cc)", f0min, f0max)
-        return call([self._audio_parselmouth, pointProcess], "Get shimmer (apq3)", 0, 0, 0.0001, 0.02, 1.3, 1.6)
+        pointProcess = parselmouth.call(self._audio_parselmouth, "To PointProcess (periodic, cc)", f0min, f0max)
+        return parselmouth.call([self._audio_parselmouth, pointProcess], "Get shimmer (apq3)", 0, 0, 0.0001, 0.02, 1.3, 1.6)
 
     @property
     def shimmer_apq5(self, f0min=F0_MIN, f0max=F0_MAX):
-        pointProcess = call(self._audio_parselmouth, "To PointProcess (periodic, cc)", f0min, f0max)
-        return call([self._audio_parselmouth, pointProcess], "Get shimmer (apq5)", 0, 0, 0.0001, 0.02, 1.3, 1.6)
+        pointProcess = parselmouth.call(self._audio_parselmouth, "To PointProcess (periodic, cc)", f0min, f0max)
+        return parselmouth.call([self._audio_parselmouth, pointProcess], "Get shimmer (apq5)", 0, 0, 0.0001, 0.02, 1.3, 1.6)
 
     @property
     def shimmer_apq11(self, f0min=F0_MIN, f0max=F0_MAX):
-        pointProcess = call(self._audio_parselmouth, "To PointProcess (periodic, cc)", f0min, f0max)
-        return call([self._audio_parselmouth, pointProcess], "Get shimmer (apq11)", 0, 0, 0.0001, 0.02, 1.3, 1.6)
+        pointProcess = parselmouth.call(self._audio_parselmouth, "To PointProcess (periodic, cc)", f0min, f0max)
+        return parselmouth.call([self._audio_parselmouth, pointProcess], "Get shimmer (apq11)", 0, 0, 0.0001, 0.02, 1.3, 1.6)
 
     @property
     def shimmer_dda(self, f0min=F0_MIN, f0max=F0_MAX):
-        pointProcess = call(self._audio_parselmouth, "To PointProcess (periodic, cc)", f0min, f0max)
-        return call([self._audio_parselmouth, pointProcess], "Get shimmer (dda)", 0, 0, 0.0001, 0.02, 1.3, 1.6)
+        pointProcess = parselmouth.call(self._audio_parselmouth, "To PointProcess (periodic, cc)", f0min, f0max)
+        return parselmouth.call([self._audio_parselmouth, pointProcess], "Get shimmer (dda)", 0, 0, 0.0001, 0.02, 1.3, 1.6)
 
     @property
     def hnr(self):
-        harmonicity = call(self._audio_parselmouth, "To Harmonicity (cc)", 0.01, 75, 0.1, 1.0)
-        return call(harmonicity, "Get mean", 0, 0)
+        harmonicity = parselmouth.call(self._audio_parselmouth, "To Harmonicity (cc)", 0.01, 75, 0.1, 1.0)
+        return parselmouth.call(harmonicity, "Get mean", 0, 0)
 
     @property
     def f0_mean(self, f0min=F0_MIN, f0max=F0_MAX, unit='Hertz'):
         pitch = parselmouth.call(self._audio_parselmouth, "To Pitch", 0.0, f0min, f0max)
-        return call(pitch, "Get mean", 0, 0, unit)
+        return parselmouth.call(pitch, "Get mean", 0, 0, unit)
 
     @property
     def f0_std(self, f0min=F0_MIN, f0max=F0_MAX, unit='Hertz'):
         pitch = parselmouth.call(self._audio_parselmouth, "To Pitch", 0.0, f0min, f0max)
-        return call(pitch, "Get standard deviation", 0, 0, unit)
+        return parselmouth.call(pitch, "Get standard deviation", 0, 0, unit)
 
     @property
     def number_syllables(self):
         return mypr.myspsyl(self._audio_path, self._myprosody_path)
+
+    @property
