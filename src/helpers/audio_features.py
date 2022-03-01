@@ -9,8 +9,9 @@ import librosa
 import pydub
 import myprosody as mypr
 import parselmouth.praat as parselmouth
+import speech_recognition as sr
 
-import helpers.audio as audio
+from src.helpers import audio as audio_helper
 
 
 class AudioFeatureExtractor(object):
@@ -21,7 +22,7 @@ class AudioFeatureExtractor(object):
     # https://osf.io/qe9k4/
     F0_MIN = 75
     F0_MAX = 500
-    
+
     def __init__(self,
                  audio: [str, os.PathLike],
                  sample_rate=16000,
@@ -30,31 +31,37 @@ class AudioFeatureExtractor(object):
         self._audio_path = audio
         self._channels = 1
         self._sample_rate = sample_rate
-        self._audio_librosa = audio.decode_audio_fix_size(
-            audio,
-            sample_rate=sample_rate,
-            n_seconds=n_seconds,
-            input_format='raw'
-        )
+        self._audio_librosa = audio_helper.decode_audio_fix_size(audio,
+                                                                 sample_rate=sample_rate,
+                                                                 n_seconds=n_seconds,
+                                                                 input_format='raw')
+        temp_audio_path = "temp_" + os.path.basename(audio)
+        librosa.output.write_wav(temp_audio_path, self._audio_librosa, sample_rate)
         self._audio_pydub = pydub.AudioSegment(
             self._audio_librosa.tobytes(),
             sample_width=4,  # because librosa convert the audio in a float32 numpy array, so 4 according to pydub
             frame_rate=self._sample_rate,
             channels=self._channels
         )
-        self._audio_parselmouth = parselmouth.Sound(audio)
+        self._audio_parselmouth = parselmouth.Sound(temp_audio_path)
         self._myprosody_path = myprosody_path or \
                                os.path.join(
-                                   os.path.dirname(os.path.dirname(os.path.dirname(audio.__file__))),
+                                   os.path.dirname(os.path.dirname(os.path.dirname(audio_helper.__file__))),
                                    'myprosody'
                                )
+        # TODO Fix text extraction from audio
+        # with sr.AudioFile('harvard.wav') as source:
+        #     audio_data = sr.Recognizer().record(source=source)
+        #     self.audio_text = sr.Recognizer().recognize_google(audio_data)
+
+        os.remove(temp_audio_path)
 
     @property
     def signaltonoise_dB(self, axis=0, ddof=0):
         # https://stackoverflow.com/questions/63177236/how-to-calculate-signal-to-noise-ratio-using-python
         m = self._audio_librosa.mean(axis)
         sd = self._audio_librosa.std(axis=axis, ddof=ddof)
-        return 20 * np.log10(abs(np.where(sd == 0, 0, m/sd)))
+        return 20 * np.log10(abs(np.where(sd == 0, 0, m / sd)))
 
     @property
     def dBFS(self):
@@ -100,32 +107,38 @@ class AudioFeatureExtractor(object):
     @property
     def shimmer_localdB(self, f0min=F0_MIN, f0max=F0_MAX):
         pointProcess = parselmouth.call(self._audio_parselmouth, "To PointProcess (periodic, cc)", f0min, f0max)
-        return parselmouth.call([self._audio_parselmouth, pointProcess], "Get shimmer (local_dB)", 0, 0, 0.0001, 0.02, 1.3, 1.6)
+        return parselmouth.call([self._audio_parselmouth, pointProcess], "Get shimmer (local_dB)", 0, 0, 0.0001, 0.02,
+                                1.3, 1.6)
 
     @property
     def shimmer_local(self, f0min=F0_MIN, f0max=F0_MAX):
         pointProcess = parselmouth.call(self._audio_parselmouth, "To PointProcess (periodic, cc)", f0min, f0max)
-        return parselmouth.call([self._audio_parselmouth, pointProcess], "Get shimmer (local)", 0, 0, 0.0001, 0.02, 1.3, 1.6)
+        return parselmouth.call([self._audio_parselmouth, pointProcess], "Get shimmer (local)", 0, 0, 0.0001, 0.02, 1.3,
+                                1.6)
 
     @property
     def shimmer_apq3(self, f0min=F0_MIN, f0max=F0_MAX):
         pointProcess = parselmouth.call(self._audio_parselmouth, "To PointProcess (periodic, cc)", f0min, f0max)
-        return parselmouth.call([self._audio_parselmouth, pointProcess], "Get shimmer (apq3)", 0, 0, 0.0001, 0.02, 1.3, 1.6)
+        return parselmouth.call([self._audio_parselmouth, pointProcess], "Get shimmer (apq3)", 0, 0, 0.0001, 0.02, 1.3,
+                                1.6)
 
     @property
     def shimmer_apq5(self, f0min=F0_MIN, f0max=F0_MAX):
         pointProcess = parselmouth.call(self._audio_parselmouth, "To PointProcess (periodic, cc)", f0min, f0max)
-        return parselmouth.call([self._audio_parselmouth, pointProcess], "Get shimmer (apq5)", 0, 0, 0.0001, 0.02, 1.3, 1.6)
+        return parselmouth.call([self._audio_parselmouth, pointProcess], "Get shimmer (apq5)", 0, 0, 0.0001, 0.02, 1.3,
+                                1.6)
 
     @property
     def shimmer_apq11(self, f0min=F0_MIN, f0max=F0_MAX):
         pointProcess = parselmouth.call(self._audio_parselmouth, "To PointProcess (periodic, cc)", f0min, f0max)
-        return parselmouth.call([self._audio_parselmouth, pointProcess], "Get shimmer (apq11)", 0, 0, 0.0001, 0.02, 1.3, 1.6)
+        return parselmouth.call([self._audio_parselmouth, pointProcess], "Get shimmer (apq11)", 0, 0, 0.0001, 0.02, 1.3,
+                                1.6)
 
     @property
     def shimmer_dda(self, f0min=F0_MIN, f0max=F0_MAX):
         pointProcess = parselmouth.call(self._audio_parselmouth, "To PointProcess (periodic, cc)", f0min, f0max)
-        return parselmouth.call([self._audio_parselmouth, pointProcess], "Get shimmer (dda)", 0, 0, 0.0001, 0.02, 1.3, 1.6)
+        return parselmouth.call([self._audio_parselmouth, pointProcess], "Get shimmer (dda)", 0, 0, 0.0001, 0.02, 1.3,
+                                1.6)
 
     @property
     def hnr(self):
@@ -147,3 +160,13 @@ class AudioFeatureExtractor(object):
         return mypr.myspsyl(self._audio_path, self._myprosody_path)
 
     @property
+    def avg_words_per_sec(self):
+        pass
+
+    @property
+    def avg_words_length(self):
+        pass
+
+    @property
+    def words_per_utterance(self):
+        pass
