@@ -50,13 +50,13 @@ class AudioFeatureExtractor(object):
                                    'myprosody'
                                )
         # TODO Fix text extraction from audio
-        # with sr.AudioFile('harvard.wav') as source:
+        # with sr.AudioFile(temp_audio_path) as source:
         #     audio_data = sr.Recognizer().record(source=source)
-        #     self.audio_text = sr.Recognizer().recognize_google(audio_data)
+        #     self._audio_text = sr.Recognizer().recognize_google(audio_data)
 
         os.remove(temp_audio_path)
 
-    @property
+    @propert
     def signaltonoise_dB(self, axis=0, ddof=0):
         # https://stackoverflow.com/questions/63177236/how-to-calculate-signal-to-noise-ratio-using-python
         m = self._audio_librosa.mean(axis)
@@ -159,14 +159,15 @@ class AudioFeatureExtractor(object):
     def number_syllables(self):
         return mypr.myspsyl(self._audio_path, self._myprosody_path)
 
-    @property
-    def avg_words_per_sec(self):
-        pass
-
-    @property
-    def avg_words_length(self):
-        pass
-
-    @property
-    def words_per_utterance(self):
-        pass
+    # TODO just set some properties for audio text features - to test
+    # @property
+    # def avg_words_per_sec(self):
+    #     return self._audio_text // self.duration_seconds
+    #
+    # @property
+    # def avg_words_length(self):
+    #     return sum([len(word) for word in self._audio_text.split()]) // len(self._audio_text.split())
+    #
+    # @property
+    # def words_per_utterance(self):
+    #     return len(self._audio_text.split())
