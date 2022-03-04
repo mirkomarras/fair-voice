@@ -159,7 +159,7 @@ class AudioFeatureExtractor(object):
     def number_syllables(self):
         return mypr.myspsyl(self._audio_path, self._myprosody_path)
 
-    # TODO just set some properties for audio text features - to test
+    # TODO just set some properties for audio text features - to test+
     # @property
     # def avg_words_per_sec(self):
     #     return self._audio_text // self.duration_seconds
