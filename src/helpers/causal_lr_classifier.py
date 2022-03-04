@@ -6,14 +6,17 @@ import numpy as np
 
 
 class CausalLRClassifier:
+    # set iteration range for LR max_iter param
     MIN_ITER = 0
     MAX_ITER = 100
     STEP_ITER = 1
 
+    # set iteration range for LR C param
     C_MIN = 1
     C_STEP = 1
     C_GRID = C_MIN * np.power(10, np.arange(0, C_STEP, dtype=float))
 
+    # set iteration range for LR L1 ratio param
     L1_RATIO_MIN = 0
     L1_RATIO_STEP = 0.1
     L1_RATIO_MAX = 1
@@ -37,9 +40,9 @@ class CausalLRClassifier:
             self._test_set_X, self._test_set_Y = None, None
         if use_grid:
             self._params_grid = self.generate_grid()
-            self._gs_list = [GridSearchCV(estimator=LogisticRegression(),
-                                          param_grid=param_grid,
-                                          n_jobs=-1) for param_grid in self._params_grid]
+            self._gs_list: List[GridSearchCV] = [GridSearchCV(estimator=LogisticRegression(),
+                                                              param_grid=param_grid,
+                                                              n_jobs=-1) for param_grid in self._params_grid]
             self._classifier = None
         else:
             self._params_grid, self._gs_list = None, None
@@ -63,9 +66,18 @@ class CausalLRClassifier:
 
     def fit(self):
         if not self._gs_list:
-            self.estimator.fit(self._train_set_X, self._train_set_Y)
+            self.classifier.fit(self._train_set_X, self._train_set_Y)
+            return self.classifier.coef_, self.classifier.intercept_
         else:
-            pass
+            gs_res = []
+            for gs in self._gs_list:
+                gs.fit(self._train_set_X, self._train_set_Y)
+                gs_res.append({"classifier": gs.best_estimator_,
+                               "params": gs.best_params_,
+                               "score": gs.best_score_,
+                               "gs": gs})
+            gs_res = sorted(gs_res, key=lambda x: x["score"])
+            return gs_res[0]["classifier"].coef_, gs_res[0]["classifier"].intercept_,
 
     @classmethod
     def generate_grid(cls):
