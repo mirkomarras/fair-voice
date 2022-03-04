@@ -216,7 +216,10 @@ class AudioFeatureExtractor(object):
         """
         return mypr.myspgend(self._audio_path, self._myprosody_path)
 
-    # TODO just set some properties for audio text features - to test+
+    def get_features(self):
+        return {k: getattr(self, k) for k, v in self.__class__.__dict__.items() if isinstance(v, property)}
+
+    # TODO just set some properties for audio text features - to test
     # @property
     # def avg_words_per_sec(self):
     #     return self._audio_text // self.duration_seconds
