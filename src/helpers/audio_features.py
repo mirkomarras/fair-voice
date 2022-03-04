@@ -159,6 +159,63 @@ class AudioFeatureExtractor(object):
     def number_syllables(self):
         return mypr.myspsyl(self._audio_path, self._myprosody_path)
 
+    @property
+    def number_pauses(self):
+        return mypr.mysppaus(self._audio_path, self._myprosody_path)
+
+    @property
+    def rate_of_speech(self):
+        # syllables/sec original duration
+        return mypr.myspsr(self._audio_path, self._myprosody_path)
+
+    @property
+    def articulation_rate(self):
+        # syllables/sec speaking duration
+        return mypr.myspatc(self._audio_path, self._myprosody_path)
+
+    @property
+    def speaking_duration_without_pauses(self):
+        return mypr.myspst(self._audio_path, self._myprosody_path)
+
+    @property
+    def speaking_duration_with_pauses(self):
+        return mypr.myspod(self._audio_path, self._myprosody_path)
+
+    @property
+    def balance(self):
+        # ratio (speaking duration)/(original duration)
+        return mypr.myspbala(self._audio_path, self._myprosody_path)
+
+    @property
+    def gender(self):
+        """
+        if z4>97 and z4<=163:
+            Male
+        elif z4>163 and z4<=245:
+            Female
+        else:
+            Voice not recognized
+
+        :return: Tuple[z4, p-value/sample_size]
+        """
+        return mypr.myspgend(self._audio_path, self._myprosody_path)
+
+    @property
+    def mood(self):
+        """
+        if (z4>97 and z4<=114) or (z4>163 and z4<=197):
+            Showing no emotion, normal,
+        elif (z4>114 and z4<=135) or (z4>197 and z4<=226):
+            Reading
+        elif (z4>135 and z4<=163) or (z4>226 and z4<=245):
+            speaking passionately
+        else:
+            Voice not recognized
+
+        :return: Tuple[z4, p-value/sample_size]
+        """
+        return mypr.myspgend(self._audio_path, self._myprosody_path)
+
     # TODO just set some properties for audio text features - to test+
     # @property
     # def avg_words_per_sec(self):
