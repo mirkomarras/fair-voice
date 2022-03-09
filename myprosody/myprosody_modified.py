@@ -15,12 +15,12 @@ def myspsyl(m,p):
     path=os.path.dirname(m)
     try:
         objects= run_file(sourcerun, -20, 2, 0.3, "yes",sound,path, 80, 400, 0.01, capture_output=True)
-        print (objects[0]) # This will print the info from the sound object, and objects[0] is a parselmouth.Sound object
+        # print (objects[0]) # This will print the info from the sound object, and objects[0] is a parselmouth.Sound object
         z1=str( objects[1]) # This will print the info from the textgrid object, and objects[1] is a parselmouth.Data object with a TextGrid inside
         z2=z1.strip().split()
         z3=int(z2[0]) # will be the integer number 10
         z4=float(z2[3]) # will be the floating point number 8.3
-        print ("number_ of_syllables=",z3)
+        # print ("number_ of_syllables=",z3)
     except:
         z3=0
         print ("Try again the sound of the audio was not clear")
@@ -32,12 +32,12 @@ def mysppaus(m,p):
     path = os.path.dirname(m)
     try:
         objects= run_file(sourcerun, -20, 2, 0.3, "yes",sound,path, 80, 400, 0.01, capture_output=True)
-        print (objects[0]) # This will print the info from the sound object, and objects[0] is a parselmouth.Sound object
+        # print (objects[0]) # This will print the info from the sound object, and objects[0] is a parselmouth.Sound object
         z1=str( objects[1]) # This will print the info from the textgrid object, and objects[1] is a parselmouth.Data object with a TextGrid inside
         z2=z1.strip().split()
         z3=int(z2[1]) # will be the integer number 10
         z4=float(z2[3]) # will be the floating point number 8.3
-        print ("number_of_pauses=",z3)
+        # print ("number_of_pauses=",z3)
     except:
         z3=0
         print ("Try again the sound of the audio was not clear")
@@ -49,12 +49,12 @@ def myspsr(m,p):
     path = os.path.dirname(m)
     try:
         objects= run_file(sourcerun, -20, 2, 0.3, "yes",sound,path, 80, 400, 0.01, capture_output=True)
-        print (objects[0]) # This will print the info from the sound object, and objects[0] is a parselmouth.Sound object
+        # print (objects[0]) # This will print the info from the sound object, and objects[0] is a parselmouth.Sound object
         z1=str( objects[1]) # This will print the info from the textgrid object, and objects[1] is a parselmouth.Data object with a TextGrid inside
         z2=z1.strip().split()
         z3=int(z2[2]) # will be the integer number 10
         z4=float(z2[3]) # will be the floating point number 8.3
-        print ("rate_of_speech=",z3,"# syllables/sec original duration")
+        # print ("rate_of_speech=",z3,"# syllables/sec original duration")
     except:
         z3=0
         print ("Try again the sound of the audio was not clear")
@@ -66,12 +66,12 @@ def myspatc(m,p):
     path = os.path.dirname(m)
     try:
         objects= run_file(sourcerun, -20, 2, 0.3, "yes",sound,path, 80, 400, 0.01, capture_output=True)
-        print (objects[0]) # This will print the info from the sound object, and objects[0] is a parselmouth.Sound object
+        # print (objects[0]) # This will print the info from the sound object, and objects[0] is a parselmouth.Sound object
         z1=str( objects[1]) # This will print the info from the textgrid object, and objects[1] is a parselmouth.Data object with a TextGrid inside
         z2=z1.strip().split()
         z3=int(z2[3]) # will be the integer number 10
         z4=float(z2[3]) # will be the floating point number 8.3
-        print ("articulation_rate=",z3,"# syllables/sec speaking duration")
+        # print ("articulation_rate=",z3,"# syllables/sec speaking duration")
     except:
         z3=0
         print ("Try again the sound of the audio was not clear")
@@ -83,12 +83,12 @@ def myspst(m,p):
     path = os.path.dirname(m)
     try:
         objects= run_file(sourcerun, -20, 2, 0.3, "yes",sound,path, 80, 400, 0.01, capture_output=True)
-        print (objects[0]) # This will print the info from the sound object, and objects[0] is a parselmouth.Sound object
+        # print (objects[0]) # This will print the info from the sound object, and objects[0] is a parselmouth.Sound object
         z1=str( objects[1]) # This will print the info from the textgrid object, and objects[1] is a parselmouth.Data object with a TextGrid inside
         z2=z1.strip().split()
         z3=int(z2[3]) # will be the integer number 10
         z4=float(z2[4]) # will be the floating point number 8.3
-        print ("speaking_duration=",z4,"# sec only speaking duration without pauses")
+        # print ("speaking_duration=",z4,"# sec only speaking duration without pauses")
     except:
         z4=0
         print ("Try again the sound of the audio was not clear")
@@ -100,12 +100,12 @@ def myspod(m,p):
     path = os.path.dirname(m)
     try:
         objects= run_file(sourcerun, -20, 2, 0.3, "yes",sound,path, 80, 400, 0.01, capture_output=True)
-        print (objects[0]) # This will print the info from the sound object, and objects[0] is a parselmouth.Sound object
+        # print (objects[0]) # This will print the info from the sound object, and objects[0] is a parselmouth.Sound object
         z1=str( objects[1]) # This will print the info from the textgrid object, and objects[1] is a parselmouth.Data object with a TextGrid inside
         z2=z1.strip().split()
         z3=int(z2[3]) # will be the integer number 10
         z4=float(z2[5]) # will be the floating point number 8.3
-        print ("original_duration=",z4,"# sec total speaking duration with pauses")
+        # print ("original_duration=",z4,"# sec total speaking duration with pauses")
     except:
         z4=0
         print ("Try again the sound of the audio was not clear")
@@ -117,12 +117,12 @@ def myspbala(m,p):
     path = os.path.dirname(m)
     try:
         objects= run_file(sourcerun, -20, 2, 0.3, "yes",sound,path, 80, 400, 0.01, capture_output=True)
-        print (objects[0]) # This will print the info from the sound object, and objects[0] is a parselmouth.Sound object
+        # print (objects[0]) # This will print the info from the sound object, and objects[0] is a parselmouth.Sound object
         z1=str( objects[1]) # This will print the info from the textgrid object, and objects[1] is a parselmouth.Data object with a TextGrid inside
         z2=z1.strip().split()
         z3=int(z2[3]) # will be the integer number 10
         z4=float(z2[6]) # will be the floating point number 8.3
-        print ("balance=",z4,"# ratio (speaking duration)/(original duration)")
+        # print ("balance=",z4,"# ratio (speaking duration)/(original duration)")
     except:
         z4=0
         print ("Try again the sound of the audio was not clear")
@@ -134,12 +134,12 @@ def myspf0mean(m,p):
     path = os.path.dirname(m)
     try:
         objects= run_file(sourcerun, -20, 2, 0.3, "yes",sound,path, 80, 400, 0.01, capture_output=True)
-        print (objects[0]) # This will print the info from the sound object, and objects[0] is a parselmouth.Sound object
+        # print (objects[0]) # This will print the info from the sound object, and objects[0] is a parselmouth.Sound object
         z1=str( objects[1]) # This will print the info from the textgrid object, and objects[1] is a parselmouth.Data object with a TextGrid inside
         z2=z1.strip().split()
         z3=int(z2[3]) # will be the integer number 10
         z4=float(z2[7]) # will be the floating point number 8.3
-        print ("f0_mean=",z4,"# Hz global mean of fundamental frequency distribution")
+        # print ("f0_mean=",z4,"# Hz global mean of fundamental frequency distribution")
     except:
         z4=0
         print ("Try again the sound of the audio was not clear")
@@ -151,12 +151,12 @@ def myspf0sd(m,p):
     path = os.path.dirname(m)
     try:
         objects= run_file(sourcerun, -20, 2, 0.3, "yes",sound,path, 80, 400, 0.01, capture_output=True)
-        print (objects[0]) # This will print the info from the sound object, and objects[0] is a parselmouth.Sound object
+        # print (objects[0]) # This will print the info from the sound object, and objects[0] is a parselmouth.Sound object
         z1=str( objects[1]) # This will print the info from the textgrid object, and objects[1] is a parselmouth.Data object with a TextGrid inside
         z2=z1.strip().split()
         z3=int(z2[3]) # will be the integer number 10
         z4=float(z2[8]) # will be the floating point number 8.3
-        print ("f0_SD=",z4,"# Hz global standard deviation of fundamental frequency distribution")
+        # print ("f0_SD=",z4,"# Hz global standard deviation of fundamental frequency distribution")
     except:
         z4=0
         print ("Try again the sound of the audio was not clear")
@@ -168,12 +168,12 @@ def myspf0med(m,p):
     path = os.path.dirname(m)
     try:
         objects= run_file(sourcerun, -20, 2, 0.3, "yes",sound,path, 80, 400, 0.01, capture_output=True)
-        print (objects[0]) # This will print the info from the sound object, and objects[0] is a parselmouth.Sound object
+        # print (objects[0]) # This will print the info from the sound object, and objects[0] is a parselmouth.Sound object
         z1=str( objects[1]) # This will print the info from the textgrid object, and objects[1] is a parselmouth.Data object with a TextGrid inside
         z2=z1.strip().split()
         z3=int(z2[3]) # will be the integer number 10
         z4=float(z2[9]) # will be the floating point number 8.3
-        print ("f0_MD=",z4,"# Hz global median of fundamental frequency distribution")
+        # print ("f0_MD=",z4,"# Hz global median of fundamental frequency distribution")
     except:
         z4=0
         print ("Try again the sound of the audio was not clear")
@@ -185,15 +185,15 @@ def myspf0min(m,p):
     path = os.path.dirname(m)
     try:
         objects= run_file(sourcerun, -20, 2, 0.3, "yes",sound,path, 80, 400, 0.01, capture_output=True)
-        print (objects[0]) # This will print the info from the sound object, and objects[0] is a parselmouth.Sound object
+        # print (objects[0]) # This will print the info from the sound object, and objects[0] is a parselmouth.Sound object
         z1=str( objects[1]) # This will print the info from the textgrid object, and objects[1] is a parselmouth.Data object with a TextGrid inside
         z2=z1.strip().split()
         z3=int(z2[10]) # will be the integer number 10
         z4=float(z2[10]) # will be the floating point number 8.3
-        print ("f0_min=",z3,"# Hz global minimum of fundamental frequency distribution")
+        # print ("f0_min=",z3,"# Hz global minimum of fundamental frequency distribution")
     except:
         z3=0
-        print ("Try again the sound of the audio was not clear") 
+        print ("Try again the sound of the audio was not clear")
     return z3
 
 def myspf0max(m,p):
@@ -202,12 +202,12 @@ def myspf0max(m,p):
     path = os.path.dirname(m)
     try:
         objects= run_file(sourcerun, -20, 2, 0.3, "yes",sound,path, 80, 400, 0.01, capture_output=True)
-        print (objects[0]) # This will print the info from the sound object, and objects[0] is a parselmouth.Sound object
+        # print (objects[0]) # This will print the info from the sound object, and objects[0] is a parselmouth.Sound object
         z1=str( objects[1]) # This will print the info from the textgrid object, and objects[1] is a parselmouth.Data object with a TextGrid inside
         z2=z1.strip().split()
         z3=int(z2[11]) # will be the integer number 10
         z4=float(z2[11]) # will be the floating point number 8.3
-        print ("f0_max=",z3,"# Hz global maximum of fundamental frequency distribution")
+        # print ("f0_max=",z3,"# Hz global maximum of fundamental frequency distribution")
     except:
         z3=0
         print ("Try again the sound of the audio was not clear")
@@ -219,12 +219,12 @@ def myspf0q25(m,p):
     path = os.path.dirname(m)
     try:
         objects= run_file(sourcerun, -20, 2, 0.3, "yes",sound,path, 80, 400, 0.01, capture_output=True)
-        print (objects[0]) # This will print the info from the sound object, and objects[0] is a parselmouth.Sound object
+        # print (objects[0]) # This will print the info from the sound object, and objects[0] is a parselmouth.Sound object
         z1=str( objects[1]) # This will print the info from the textgrid object, and objects[1] is a parselmouth.Data object with a TextGrid inside
         z2=z1.strip().split()
         z3=int(z2[12]) # will be the integer number 10
         z4=float(z2[11]) # will be the floating point number 8.3
-        print ("f0_quan25=",z3,"# Hz global 25th quantile of fundamental frequency distribution")
+        # print ("f0_quan25=",z3,"# Hz global 25th quantile of fundamental frequency distribution")
     except:
         z3=0
         print ("Try again the sound of the audio was not clear")
@@ -236,12 +236,12 @@ def myspf0q75(m,p):
     path = os.path.dirname(m)
     try:
         objects= run_file(sourcerun, -20, 2, 0.3, "yes",sound,path, 80, 400, 0.01, capture_output=True)
-        print (objects[0]) # This will print the info from the sound object, and objects[0] is a parselmouth.Sound object
+        # print (objects[0]) # This will print the info from the sound object, and objects[0] is a parselmouth.Sound object
         z1=str( objects[1]) # This will print the info from the textgrid object, and objects[1] is a parselmouth.Data object with a TextGrid inside
         z2=z1.strip().split()
         z3=int(z2[13]) # will be the integer number 10
         z4=float(z2[11]) # will be the floating point number 8.3
-        print ("f0_quan75=",z3,"# Hz global 75th quantile of fundamental frequency distribution")
+        # print ("f0_quan75=",z3,"# Hz global 75th quantile of fundamental frequency distribution")
     except:
         z3=0
         print ("Try again the sound of the audio was not clear")
@@ -253,7 +253,7 @@ def mysptotal(m,p):
     path = os.path.dirname(m)
     try:
         objects= run_file(sourcerun, -20, 2, 0.3, "yes",sound,path, 80, 400, 0.01, capture_output=True)
-        print (objects[0]) # This will print the info from the sound object, and objects[0] is a parselmouth.Sound object
+        # print (objects[0]) # This will print the info from the sound object, and objects[0] is a parselmouth.Sound object
         z1=str( objects[1]) # This will print the info from the textgrid object, and objects[1] is a parselmouth.Data object with a TextGrid inside
         z2=z1.strip().split()
         z3=np.array(z2)
@@ -262,7 +262,7 @@ def mysptotal(m,p):
         dataset=pd.DataFrame({"number_ of_syllables":z5[0,:],"number_of_pauses":z5[1,:],"rate_of_speech":z5[2,:],"articulation_rate":z5[3,:],"speaking_duration":z5[4,:],
                           "original_duration":z5[5,:],"balance":z5[6,:],"f0_mean":z5[7,:],"f0_std":z5[8,:],"f0_median":z5[9,:],"f0_min":z5[10,:],"f0_max":z5[11,:],
                           "f0_quantile25":z5[12,:],"f0_quan75":z5[13,:]})
-        print (dataset.T)
+        # print (dataset.T)
     except:
         print ("Try again the sound of the audio was not clear")
     return dataset.T
@@ -273,7 +273,7 @@ def mysppron(m,p):
     path = os.path.dirname(m)
     try:
         objects= run_file(sourcerun, -20, 2, 0.3, "yes",sound,path, 80, 400, 0.01, capture_output=True)
-        print (objects[0]) # This will print the info from the sound object, and objects[0] is a parselmouth.Sound object
+        # print (objects[0]) # This will print the info from the sound object, and objects[0] is a parselmouth.Sound object
         z1=str( objects[1]) # This will print the info from the textgrid object, and objects[1] is a parselmouth.Data object with a TextGrid inside
         z2=z1.strip().split()
         z3=int(z2[13]) # will be the integer number 10
@@ -281,7 +281,7 @@ def mysppron(m,p):
         db= binom.rvs(n=10,p=z4,size=10000)
         a=np.array(db)
         b=np.mean(a)*100/10
-        print ("Pronunciation_posteriori_probability_score_percentage= :%.2f" % (b))
+        # print ("Pronunciation_posteriori_probability_score_percentage= :%.2f" % (b))
     except:
         print ("Try again the sound of the audio was not clear")
     return b
@@ -292,7 +292,7 @@ def myspgend(m,p):
     path = os.path.dirname(m)
     try:
         objects= run_file(sourcerun, -20, 2, 0.3, "yes",sound,path, 80, 400, 0.01, capture_output=True)
-        print (objects[0]) # This will print the info from the sound object, and objects[0] is a parselmouth.Sound object
+        # print (objects[0]) # This will print the info from the sound object, and objects[0] is a parselmouth.Sound object
         z1=str( objects[1]) # This will print the info from the textgrid object, and objects[1] is a parselmouth.Data object with a TextGrid inside
         z2=z1.strip().split()
         z3=float(z2[8]) # will be the integer number 10
@@ -354,7 +354,7 @@ def myspgend(m,p):
     except:
         print("Try again the sound of the audio was not clear")
 
-    return z4, mmm/nnn
+    return z4 if "z4" in locals() else None, mmm/nnn if "mmm" in locals() and "nnn" in locals() else None
 
 def myprosody(m,p):
     sound = m
@@ -389,12 +389,12 @@ def myprosody(m,p):
     namess=nms = ['avepauseduratin','avelongpause','speakingtot','articulationrate','mr',
                               'q50','std','fmax','fmin','vowelinx2','formantmean','formantstd','ins',
 							  'xxx']
-    df1 = pd.read_csv(outsy, names = namess)    
+    df1 = pd.read_csv(outsy, names = namess)
     nsns=['average_syll_pause_duration','No._long_pause','speaking_time','ave_No._of_words_in_minutes','articulation_rate','No._words_in_minutes','formants_index','f0_index','f0_quantile_25_index',
                               'f0_quantile_50_index','f0_quantile_75_index','f0_std','f0_max','f0_min','No._detected_vowel','perc%._correct_vowel','(f2/f1)_mean','(f2/f1)_std',
                                 'no._of_words','no._of_pauses','intonation_index',
 				    '(voiced_syll_count)/(no_of_pause)','TOEFL_Scale_Score','Score_Shannon_index','speaking_rate']
-    dataframe = pd.read_csv(pa2) 
+    dataframe = pd.read_csv(pa2)
     df55 = pd.read_csv(outst,names=nsns)
     dataframe=dataframe.values
     array = df55.values
@@ -407,10 +407,10 @@ def myprosody(m,p):
         if he==0:
             he=25
             dfout = "%s:\t %f (%s)" %  (nsns[i],he,"% percentile ")
-            print(dfout) 
+            print(dfout)
         elif he>=25 and he<=75:
             dfout = "%s:\t %f (%s)" % (nsns[i],he,"% percentile ")
-            print(dfout) 
+            print(dfout)
         else:
            dfout = "%s:\t (%s)" % (nsns[i],":Out of Range")
            print(dfout)
@@ -483,10 +483,8 @@ def mysplev(m, p):
             sourcerun = p if os.path.splitext(p)[1] == '.praat' else os.path.join(p, "essen", "myspsolution.praat")
             path = os.path.dirname(m)
             objects = run_file(sourcerun, -20, 2, 0.3, "yes", sound, path, 80, 400, 0.01, capture_output=True)
-            print(objects[
-                      0])  # This will print the info from the sound object, and objects[0] is a parselmouth.Sound object
-            z1 = str(objects[
-                         1])  # This will print the info from the textgrid object, and objects[1] is a parselmouth.Data object with a TextGrid inside
+            # print(objects[0])  # This will print the info from the sound object, and objects[0] is a parselmouth.Sound object
+            z1 = str(objects[1])  # This will print the info from the textgrid object, and objects[1] is a parselmouth.Data object with a TextGrid inside
             z2 = z1.strip().split()
             z3 = int(z2[13])  # will be the integer number 10
             z4 = float(z2[14])  # will be the floating point number 8.3

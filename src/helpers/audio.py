@@ -10,6 +10,9 @@ import math
 import os
 
 
+np.random.seed(0)
+
+
 def decode_audio(fp, tgt_sample_rate=16000):
     """
     Function to decode an audio file
@@ -58,6 +61,8 @@ def decode_audio_fix_size(fp, sample_rate=16000, n_seconds=3, input_format='spec
         input = np.float32(input)
         filterbank = get_tf_filterbanks(input)
         output = filterbank
+    elif input_format == 'raw':
+        output = audio
     else:
         output = np.expand_dims(audio, axis=0)
         output = np.expand_dims(output, axis=2)
