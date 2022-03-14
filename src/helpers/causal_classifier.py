@@ -37,8 +37,9 @@ class CausalClassifier:
     L1_RATIO_GRID = np.arange(L1_RATIO_MIN, L1_RATIO_MAX + L1_RATIO_STEP, L1_RATIO_STEP)
 
     def __init__(self, dataset: pd.DataFrame, target_col_name: str, use_grid: bool = False,
-                 test_size: float = 0.2, classifier: str = "RF"):
+                 test_size: float = 0.2, classifier: str = "RF", model_path: str = None):
         # self._imputer = SimpleImputer(missing_values=np.nan, strategy="mean")
+        self._save_path = model_path
         self._target_col = dataset[target_col_name].astype(str)
         self._target_col_name = target_col_name
         self._dataset = dataset.drop(columns=target_col_name)
@@ -69,7 +70,11 @@ class CausalClassifier:
             self._params_grid = self.generate_grid()
             self._gs_list: List[GridSearchCV] = [GridSearchCV(estimator=self._classifier,
                                                               param_grid=param_grid,
-                                                              n_jobs=-1) for param_grid in self._params_grid]
+                                                              n_jobs=-1,
+                                                              scoring=["balanced_accuracy", "roc_auc", "f1_weighted"],
+                                                              refit="balanced_accuracy",
+                                                              return_train_score=True)
+                                                 for param_grid in self._params_grid]
             self._classifier = None
         else:
             self._params_grid, self._gs_list = None, None
@@ -108,6 +113,9 @@ class CausalClassifier:
                                "score": gs.best_score_,
                                "gs": gs})
             gs_res = sorted(gs_res, key=lambda x: x["score"])
+            if self._save_path:
+                with open(self._save_path, 'wb') as model_file:
+                    pickle.dump(gs_res[0]["classifier"], model_file)
             if self.__cc == "RF":
                 return gs_res[0]["classifier"].feature_importances_
             elif self.__cc == "LR":
@@ -183,6 +191,9 @@ if __name__ == "__main__":
     parser.add_argument('--cc', dest='causal_classifier', default='RF', choices=["RF", "LR"], type=str, action='store',
                         help='Causal classifier alias')
 
+    parser.add_argument('--model_save_path', dest='model_save_path', default='causal_classifier.model',
+                        type=str, action='store', help='Save path to store the causal classifier model')
+
     args = parser.parse_args()
 
     print("Composing Dataset...")
@@ -209,7 +220,8 @@ if __name__ == "__main__":
                                          target_col_name="label",
                                          use_grid=True,
                                          test_size=0,
-                                         classifier=args.causal_classifier)
+                                         classifier=args.causal_classifier,
+                                         model_path=args.model_save_path)
     print("Causal Classifier set up")
 
     print("Start fitting...")
