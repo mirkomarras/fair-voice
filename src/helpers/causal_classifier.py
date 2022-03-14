@@ -1,8 +1,10 @@
+import json
 import os
 import pickle
 import argparse
 import numpy as np
 import pandas as pd
+from sklearn.metrics import f1_score, roc_auc_score, balanced_accuracy_score
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
@@ -17,11 +19,11 @@ class CausalClassifier:
 
     # set iteration range for RF depth
     MAX_DEPTH_MIN = 50
-    MAX_DEPTH_MAX = 200
+    MAX_DEPTH_MAX = 250
     MAX_DEPTH_STEP = 10
 
     # set iteration range for LR max_iter param
-    MIN_ITER = 0
+    MIN_ITER = 10
     MAX_ITER = 200
     STEP_ITER = 10
 
@@ -72,7 +74,7 @@ class CausalClassifier:
                                                               param_grid=param_grid,
                                                               n_jobs=-1,
                                                               scoring=["balanced_accuracy", "roc_auc", "f1_weighted"],
-                                                              refit="balanced_accuracy",
+                                                              refit="f1_weighted",
                                                               return_train_score=True)
                                                  for param_grid in self._params_grid]
             self._classifier = None
@@ -113,13 +115,17 @@ class CausalClassifier:
                                "score": gs.best_score_,
                                "gs": gs})
             gs_res = sorted(gs_res, key=lambda x: x["score"])
+            y_pred = gs_res[0]["classifier"].predict(self._train_set_X)
+            metrics = {"f1_score": f1_score(self._train_set_Y, y_pred, average="weighted"),
+                       "roc_auc_score": roc_auc_score(self._train_set_Y, y_pred, average="weighted"),
+                       "balanced_accuracy_score": balanced_accuracy_score(self._train_set_Y, y_pred)}
             if self._save_path:
                 with open(self._save_path, 'wb') as model_file:
                     pickle.dump(gs_res[0]["classifier"], model_file)
             if self.__cc == "RF":
-                return gs_res[0]["classifier"].feature_importances_
+                return gs_res[0]["classifier"].feature_importances_, metrics
             elif self.__cc == "LR":
-                return gs_res[0]["classifier"].coef_, gs_res[0]["classifier"].intercept_
+                return gs_res[0]["classifier"].coef_, gs_res[0]["classifier"].intercept_, metrics
             else:
                 raise ValueError("Wrong Estimator!")
 
@@ -226,19 +232,22 @@ if __name__ == "__main__":
 
     print("Start fitting...")
     if args.causal_classifier == "RF":
-        feature_importance = causal_classifier.fit()
+        feature_importance, metrics = causal_classifier.fit()
         print("Training done!")
         print("Saving Causal Classifier weights...")
         with open(f"feature_importance_{args.causal_classifier}_{os.path.splitext(os.path.basename(args.audio_label_path))[0]}.npy", "wb") as fi_file:
             np.save(file=fi_file, arr=feature_importance)
     elif args.causal_classifier == "LR":
-        coef, intercept = causal_classifier.fit()
+        coef, intercept, metrics = causal_classifier.fit()
         print("Training done!")
         print("Saving Causal Classifier weights...")
         with open(f"coef_{args.causal_classifier}_{os.path.splitext(os.path.basename(args.audio_label_path))[0]}.npy", "wb") as coef_file:
             np.save(file=coef_file, arr=coef)
         with open(f"intercept_{args.causal_classifier}_{os.path.splitext(os.path.basename(args.audio_label_path))[0]}.npy", "wb") as intercept_file:
             np.save(file=intercept_file, arr=intercept)
+
+    with open(f"metrics_{args.causal_classifier}_{os.path.splitext(os.path.basename(args.audio_label_path))[0]}.json", "wb") as metrics_file:
+        json.dump(metrics, metrics_file)
 
     features_names = causal_classifier.train_set[0].columns.to_numpy()
     with open(f"features_names_{args.causal_classifier}_{os.path.splitext(os.path.basename(args.audio_label_path))[0]}.npy", "wb") as feat_file:
