@@ -190,7 +190,7 @@ if __name__ == "__main__":
         with open(args.audio_label_path, "rb") as fsl_pkl:
             far_labels = pickle.load(fsl_pkl)
         audio_features_dataset = pd.DataFrame()
-        for k, v in list(test_audio_features.items())[:10]:
+        for k, v in test_audio_features.items():
             elements = k.split("/")
             lan, user = elements[0], elements[1]
             record_to_add = {}
