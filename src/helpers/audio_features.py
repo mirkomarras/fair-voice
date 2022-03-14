@@ -246,11 +246,21 @@ def extract_audio_features(audios: Sequence[Union[str, os.PathLike]], audio_base
 if __name__ == "__main__":
     fairvoice_path = r'/home/meddameloni/FairVoice'
     test_path = r'/home/meddameloni/dl-fair-voice/exp/counterfactual_fairness/preprocessing_data/test_ENG_SPA_75users_6samples_50neg_5pos.csv'
+    metadata_path = r'/home/meddameloni/dl-fair-voice/exp/counterfactual_fairness/preprocessing_data/metadata_ENG_SPA_75users_6minsample.csv'
 
     test_df = pd.read_csv(test_path)
     test_audios = np.unique(np.concatenate([test_df['audio_1'].tolist(), test_df['audio_2'].tolist()]))
+    
+    metadata = pd.read_csv(metadata_path).set_index(["language_l1", "id_user"])
 
+    keys = ("gender", "age")
     audio_features = extract_audio_features(test_audios, fairvoice_path)
+    for _audio in audio_features:
+        lang, user = os.path.split(os.path.dirname(_audio))
+        
+        gender, age = metadata.loc[(lang, user), keys]
+        for k, v in zip(keys, [gender, age]):
+            audio_features[_audio][k] = v
 
     import pickle
     with open("test_audio_features.pkl", 'wb') as f:

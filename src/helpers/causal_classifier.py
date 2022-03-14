@@ -1,3 +1,4 @@
+import os
 import pickle
 import argparse
 import numpy as np
@@ -83,11 +84,11 @@ class CausalClassifier:
 
     @property
     def train_set(self):
-        return self._train_set
+        return self._train_set_X, self._train_set_Y
 
     @property
     def test_set(self):
-        return self._test_set
+        return self._test_set_X, self._test_set_Y
 
     def fit(self):
         if not self._gs_list:
@@ -179,7 +180,7 @@ if __name__ == "__main__":
                         default='far_data__resnet34vox_English-Spanish-train1@15_920_08032022_test_ENG_SPA_75users_6samples_50neg_5pos#00_10.pkl',
                         type=str, action='store', help='Audio labels pickle file path')
 
-    parser.add_argument('--cc', dest='causal_classifier', default='RF', type=str, action='store',
+    parser.add_argument('--cc', dest='causal_classifier', default='RF', choices=["RF", "LR"], type=str, action='store',
                         help='Causal classifier alias')
 
     args = parser.parse_args()
@@ -216,15 +217,25 @@ if __name__ == "__main__":
         feature_importance = causal_classifier.fit()
         print("Training done!")
         print("Saving Causal Classifier weights...")
-        with open(f"coef_{args.causal_classifier}.npy", "wb") as fi_file:
+        with open(f"feature_importance_{args.causal_classifier}_{os.path.splitext(os.path.basename(args.audio_label_path))[0]}.npy", "wb") as fi_file:
             np.save(file=fi_file, arr=feature_importance)
     elif args.causal_classifier == "LR":
         coef, intercept = causal_classifier.fit()
         print("Training done!")
         print("Saving Causal Classifier weights...")
-        with open(f"coef_{args.causal_classifier}.npy", "wb") as coef_file:
+        with open(f"coef_{args.causal_classifier}_{os.path.splitext(os.path.basename(args.audio_label_path))[0]}.npy", "wb") as coef_file:
             np.save(file=coef_file, arr=coef)
-        with open(f"intercept_{args.causal_classifier}.npy", "wb") as intercept_file:
+        with open(f"intercept_{args.causal_classifier}_{os.path.splitext(os.path.basename(args.audio_label_path))[0]}.npy", "wb") as intercept_file:
             np.save(file=intercept_file, arr=intercept)
 
+    features_names = causal_classifier.train_set[0].columns.to_numpy()
+    with open(f"features_names_{args.causal_classifier}_{os.path.splitext(os.path.basename(args.audio_label_path))[0]}.npy", "wb") as feat_file:
+        np.save(file=feat_file, arr=features_names)
+
     print("Causal Classifier weights stored!")
+
+    df = pd.DataFrame.from_dict(dict(zip(features_names, feature_importance)), orient='index')
+    df.sort_values(0, ascending=False).T.to_csv(os.path.join(
+        r'/home/meddameloni/dl-fair-voice/exp/counterfactual_fairness/classification',
+        f'{args.causal_classifier}_{os.path.splitext(os.path.basename(args.audio_label_path))[0]}.csv'
+    ), index=False)

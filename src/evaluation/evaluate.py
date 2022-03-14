@@ -1,5 +1,6 @@
 import os
 import copy
+import pickle
 import functools
 import argparse
 from collections import namedtuple
@@ -240,6 +241,12 @@ if __name__ == "__main__":
 
     ev.kde_analysis(plots_path=args.plots_kde_path)
     far, frr = ev.kde_analysis(return_far_frr=True)
+
+    # with open(r'/home/meddameloni/dl-fair-voice/exp/counterfactual_fairness/evaluation/far_data__' + os.path.splitext(args.results_file)[0], 'wb') as f:
+    #     pickle.dump(far, f)
+    #
+    # with open(r'/home/meddameloni/dl-fair-voice/exp/counterfactual_fairness/evaluation/frr_data__' + os.path.splitext(args.results_file)[0], 'wb') as f:
+    #     pickle.dump(frr, f)
 
     if args.far_label_0_le is not None or args.frr_label_0_le is not None:
         ev.hist_analysis_mapped_far_frr(
