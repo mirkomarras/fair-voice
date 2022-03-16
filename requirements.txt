@@ -3,7 +3,7 @@ Keras==2.3.1
 librosa==0.7.1
 matplotlib==3.0.2
 matplotlib2tikz==0.6.18
-numpy==1.16.1
+numpy==1.21.0
 pandas==0.24.1
 pydub==0.23.1
 soundfile==0.10.3.post1
