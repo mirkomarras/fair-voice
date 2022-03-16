@@ -10,7 +10,7 @@ import math
 import os
 
 
-np.random.seed(0)
+np.random.seed(32)
 
 
 def decode_audio(fp, tgt_sample_rate=16000):

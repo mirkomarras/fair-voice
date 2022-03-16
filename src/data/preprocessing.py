@@ -11,8 +11,8 @@ import pandas as pd
 
 
 Language = Hashable
-random.seed(0)
-np.random.seed(0)
+random.seed(32)
+np.random.seed(32)
 
 
 def preprocess_data(metadata_path,

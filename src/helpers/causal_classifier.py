@@ -194,11 +194,15 @@ if __name__ == "__main__":
                         default='far_data__resnet34vox_English-Spanish-train1@15_920_08032022_test_ENG_SPA_75users_6samples_50neg_5pos#00_10.pkl',
                         type=str, action='store', help='Audio labels pickle file path')
 
-    parser.add_argument('--cc', dest='causal_classifier', default='RF', choices=["RF", "LR"], type=str, action='store',
-                        help='Causal classifier alias')
+    cc_action = parser.add_argument('--cc', dest='causal_classifier', default='RF', choices=["RF", "LR"], type=str,
+                                    action='store', help='Causal classifier alias')
 
     parser.add_argument('--model_save_path', dest='model_save_path', default='causal_classifier.model',
                         type=str, action='store', help='Save path to store the causal classifier model')
+
+    parser.add_argument('--metr_feats_sfolder', dest='metrics_features_save_folderpath',
+                        default='metrics_features_causal_classifier', type=str, action='store',
+                        help='Save folderpath to store the metrics and the feature importance')
 
     args = parser.parse_args()
 
@@ -230,33 +234,47 @@ if __name__ == "__main__":
                                          model_path=args.model_save_path)
     print("Causal Classifier set up")
 
+    metadata_filename = f"{args.causal_classifier}_{os.path.splitext(os.path.basename(args.audio_label_path))[0]}"
+
+    if not os.path.exists(args.metrics_features_save_folderpath):
+        os.makedirs(args.metrics_features_save_folderpath)
+
+    features_names = causal_classifier.train_set[0].columns.to_numpy().astype(str)
+    np.save(
+        file=os.path.join(args.metrics_features_save_folderpath, f"features_names_{metadata_filename}.npy"),
+        arr=features_names
+    )
+
     print("Start fitting...")
     if args.causal_classifier == "RF":
         feature_importance, metrics = causal_classifier.fit()
         print("Training done!")
         print("Saving Causal Classifier weights...")
-        with open(f"feature_importance_{args.causal_classifier}_{os.path.splitext(os.path.basename(args.audio_label_path))[0]}.npy", "wb") as fi_file:
-            np.save(file=fi_file, arr=feature_importance)
+        np.save(
+            file=os.path.join(args.metrics_features_save_folderpath, f"feature_importance_{metadata_filename}.npy"),
+            arr=feature_importance
+        )
+
+        df = pd.DataFrame.from_dict(dict(zip(features_names, feature_importance)), orient='index')
+        df.sort_values(0, ascending=False).T.to_csv(os.path.join(
+            args.metrics_features_save_folderpath,
+            f'{metadata_filename}.csv'
+        ), index=False)
     elif args.causal_classifier == "LR":
         coef, intercept, metrics = causal_classifier.fit()
         print("Training done!")
         print("Saving Causal Classifier weights...")
-        with open(f"coef_{args.causal_classifier}_{os.path.splitext(os.path.basename(args.audio_label_path))[0]}.npy", "wb") as coef_file:
-            np.save(file=coef_file, arr=coef)
-        with open(f"intercept_{args.causal_classifier}_{os.path.splitext(os.path.basename(args.audio_label_path))[0]}.npy", "wb") as intercept_file:
-            np.save(file=intercept_file, arr=intercept)
 
-    with open(f"metrics_{args.causal_classifier}_{os.path.splitext(os.path.basename(args.audio_label_path))[0]}.json", "wb") as metrics_file:
+        coef_path = f"coef_{metadata_filename}.npy"
+
+        intercept_path = f"intercept_{metadata_filename}.npy"
+        np.save(file=os.path.join(args.metrics_features_save_folderpath, coef_path), arr=coef)
+        np.save(file=os.path.join(args.metrics_features_save_folderpath, intercept_path), arr=intercept)
+    else:
+        raise ValueError(f"`{args.causal_classifier}` is not a supported classifier. Select one of {cc_action.choices}")
+
+    with open(os.path.join(args.metrics_features_save_folderpath, f"metrics_{metadata_filename}.json"), "w")\
+            as metrics_file:
         json.dump(metrics, metrics_file)
 
-    features_names = causal_classifier.train_set[0].columns.to_numpy()
-    with open(f"features_names_{args.causal_classifier}_{os.path.splitext(os.path.basename(args.audio_label_path))[0]}.npy", "wb") as feat_file:
-        np.save(file=feat_file, arr=features_names)
-
     print("Causal Classifier weights stored!")
-
-    df = pd.DataFrame.from_dict(dict(zip(features_names, feature_importance)), orient='index')
-    df.sort_values(0, ascending=False).T.to_csv(os.path.join(
-        r'/home/meddameloni/dl-fair-voice/exp/counterfactual_fairness/classification',
-        f'{args.causal_classifier}_{os.path.splitext(os.path.basename(args.audio_label_path))[0]}.csv'
-    ), index=False)

@@ -3,7 +3,8 @@
 
 import os
 import pickle
-from typing import Union, Sequence
+import argparse
+from typing import Union, Sequence, Iterable
 
 import numpy as np
 import pandas as pd
@@ -49,10 +50,10 @@ class AudioFeatureExtractor(object):
         )
         self._audio_parselmouth = parselmouth.Sound(self._temp_audio_path)
         self._myprosody_path = myprosody_path or \
-                               os.path.join(
-                                   os.path.dirname(os.path.dirname(os.path.dirname(audio_helper.__file__))),
-                                   'myprosody'
-                               )
+            os.path.join(
+               os.path.dirname(os.path.dirname(os.path.dirname(audio_helper.__file__))),
+               'myprosody'
+            )
         # TODO Fix text extraction from audio
         # with sr.AudioFile(temp_audio_path) as source:
         #     audio_data = sr.Recognizer().record(source=source)
@@ -218,8 +219,12 @@ class AudioFeatureExtractor(object):
         """
         return mypr.myspgend(self._temp_audio_path, self._myprosody_path)
 
-    def get_features(self):
-        return {k: getattr(self, k) for k, v in self.__class__.__dict__.items() if isinstance(v, property)}
+    def get_features(self, subset=None):
+        subset = subset or set(self.__class__.__dict__.keys())
+
+        return {
+            k: getattr(self, k) for k, v in self.__class__.__dict__.items() if isinstance(v, property) and k in subset 
+        }
 
     # TODO just set some properties for audio text features - to test
     # @property
@@ -235,33 +240,82 @@ class AudioFeatureExtractor(object):
     #     return len(self._audio_text.split())
 
 
-def extract_audio_features(audios: Sequence[Union[str, os.PathLike]], audio_base_path: Union[str, os.PathLike]):
+def extract_audio_features(audios: Sequence[Union[str, os.PathLike]],
+                           audio_base_path: Union[str, os.PathLike],
+                           subset: Iterable = None):
     features = {}
     for audio in audios:
-        features[audio] = AudioFeatureExtractor(os.path.join(audio_base_path, audio)).get_features()
+        features[audio] = AudioFeatureExtractor(os.path.join(audio_base_path, audio)).get_features(subset=subset)
 
     return features
 
 
 if __name__ == "__main__":
-    fairvoice_path = r'/home/meddameloni/FairVoice'
-    test_path = r'/home/meddameloni/dl-fair-voice/exp/counterfactual_fairness/preprocessing_data/test_ENG_SPA_75users_6samples_50neg_5pos.csv'
-    metadata_path = r'/home/meddameloni/dl-fair-voice/exp/counterfactual_fairness/preprocessing_data/metadata_ENG_SPA_75users_6minsample.csv'
+    parser = argparse.ArgumentParser(description='Audio Features Extraction')
 
-    test_df = pd.read_csv(test_path)
+    parser.add_argument('--fairvoice_path', dest='fairvoice_path', default=r'/home/meddameloni/FairVoice',
+                        type=str, action='store', help='Path of the FairVoice dataset')
+    parser.add_argument('--test_path', dest='test_path',
+                        default=r'/home/meddameloni/dl-fair-voice/exp/counterfactual_fairness/preprocessing_data/test_ENG_SPA_75users_6samples_50neg_5pos.csv',
+                        type=str, action='store', help='Path of the test set containing the audios to extract')
+    parser.add_argument('--metadata_path', dest='metadata_path', default=r'/home/meddameloni/dl-fair-voice/exp/counterfactual_fairness/preprocessing_data/metadata_ENG_SPA_75users_6minsample.csv',
+                        type=str, action='store', help='Path of the csv containing the metadata of each user')
+    parser.add_argument('--features', dest='features', default=[], nargs='+',
+                        type=str, action='store', help='List of the features to extract')
+    parser.add_argument('--save_path', dest='save_path',
+                        default='/home/meddameloni/dl-fair-voice/exp/counterfactual_fairness/audio_analysis/test_audio_features.pkl', type=str, action='store',
+                        help='Save path of the extracted audio_features')
+
+    args = parser.parse_args()
+
+    test_df = pd.read_csv(args.test_path)
     test_audios = np.unique(np.concatenate([test_df['audio_1'].tolist(), test_df['audio_2'].tolist()]))
     
-    metadata = pd.read_csv(metadata_path).set_index(["language_l1", "id_user"])
-
+    metadata = pd.read_csv(args.metadata_path).set_index(["language_l1", "id_user"])
     keys = ("gender", "age")
-    audio_features = extract_audio_features(test_audios, fairvoice_path)
+
+    if not args.features:
+        features_subset = [
+            'signaltonoise_dB',
+            'dBFS',
+            'rms',
+            'max',
+            'duration_seconds',
+            'jitter_localabsolute',
+            'jitter_local',
+            'jitter_rap',
+            'jitter_ppq5',
+            'jitter_ddp',
+            'shimmer_localdB',
+            'shimmer_local',
+            'shimmer_apq3',
+            'shimmer_apq5',
+            'shimmer_apq11',
+            'shimmer_dda',
+            'hnr',
+            'f0_mean',
+            'f0_std',
+            'number_syllables',
+            'number_pauses',
+            'rate_of_speech',
+            'articulation_rate',
+            'speaking_duration_without_pauses',
+            'speaking_duration_with_pauses',
+            'balance',
+            # 'gender',
+            # 'mood'
+        ]
+    else:
+        features_subset = args.features
+
+    audio_features = extract_audio_features(test_audios, args.fairvoice_path, subset=features_subset)
     for _audio in audio_features:
         lang, user = os.path.split(os.path.dirname(_audio))
         
         gender, age = metadata.loc[(lang, user), keys]
         for k, v in zip(keys, [gender, age]):
             audio_features[_audio][k] = v
+        audio_features[_audio]["language"] = lang
 
-    import pickle
-    with open("test_audio_features.pkl", 'wb') as f:
+    with open(args.save_path, 'wb') as f:
         pickle.dump(audio_features, f)
