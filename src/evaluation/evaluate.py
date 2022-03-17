@@ -220,10 +220,10 @@ class Evaluator:
 if __name__ == "__main__":
     """
     Resnet34
-    python3 evaluate.py --results_file /home/meddameloni/dl-fair-voice/exp/counterfactual_fairness/results/resnet34vox_English-Spanish-train1@15_920_08032022_test_ENG_SPA_75users_6samples_50neg_5pos#00_10.csv --plots_kde_path "/home/meddameloni/dl-fair-voice/exp/counterfactual_fairness/plots/{}_kde__resnet34vox_English-Spanish-train1@15_920_08032022_test_ENG_SPA_75users_6samples_50neg_5pos#00_10.png" --far_label_0_le 0.05 --frr_label_0_le 0.05 --plots_hist_path "/home/meddameloni/dl-fair-voice/exp/counterfactual_fairness/plots/{}_0.05_0.05_hist__resnet34vox_English-Spanish-train1@15_920_08032022_test_ENG_SPA_75users_6samples_50neg_5pos#00_10.png"
+    python3 evaluate.py --results_file /home/meddameloni/dl-fair-voice/exp/counterfactual_fairness/results/resnet34vox_English-Spanish-train1@15_920_15032022_test_ENG_SPA_75users_6samples_50neg_5pos#00_10.csv --plots_kde_path "/home/meddameloni/dl-fair-voice/exp/counterfactual_fairness/evaluation/plots/{}_kde__resnet34vox_English-Spanish-train1@15_920_15032022_test_ENG_SPA_75users_6samples_50neg_5pos#00_10.png" --far_label_0_le 0 --frr_label_0_le 0 --plots_hist_path "/home/meddameloni/dl-fair-voice/exp/counterfactual_fairness/evaluation/plots/{}_0_0_hist__resnet34vox_English-Spanish-train1@15_920_15032022_test_ENG_SPA_75users_6samples_50neg_5pos#00_10.png"
     
     X-Vector
-    python3 evaluate.py --results_file /home/meddameloni/dl-fair-voice/exp/counterfactual_fairness/results/xvector_English-Spanish-train1@13_992_08032022_test_ENG_SPA_75users_6samples_50neg_5pos#00_10.csv --plots_kde_path "/home/meddameloni/dl-fair-voice/exp/counterfactual_fairness/plots/{}_kde__xvector_English-Spanish-train1@13_992_08032022_test_ENG_SPA_75users_6samples_50neg_5pos#00_10.png" --far_label_0_le 0.05 --frr_label_0_le 0.05 --plots_hist_path "/home/meddameloni/dl-fair-voice/exp/counterfactual_fairness/plots/{}_0.05_0.05_hist__xvector_English-Spanish-train1@13_992_08032022_test_ENG_SPA_75users_6samples_50neg_5pos#00_10.png"
+    python3 evaluate.py --results_file /home/meddameloni/dl-fair-voice/exp/counterfactual_fairness/results/xvector_English-Spanish-train1@13_992_15032022_test_ENG_SPA_75users_6samples_50neg_5pos#00_10.csv --plots_kde_path "/home/meddameloni/dl-fair-voice/exp/counterfactual_fairness/evaluation/plots/{}_kde__xvector_English-Spanish-train1@13_992_15032022_test_ENG_SPA_75users_6samples_50neg_5pos#00_10.png" --far_label_0_le 0 --frr_label_0_le 0 --plots_hist_path "/home/meddameloni/dl-fair-voice/exp/counterfactual_fairness/evaluation/plots/{}_0_0_hist__xvector_English-Spanish-train1@13_992_15032022_test_ENG_SPA_75users_6samples_50neg_5pos#00_10.png"
     """
 
     parser = argparse.ArgumentParser(description='Tensorflow Results Evaluation')
@@ -242,11 +242,11 @@ if __name__ == "__main__":
     ev.kde_analysis(plots_path=args.plots_kde_path)
     far, frr = ev.kde_analysis(return_far_frr=True)
 
-    # with open(r'/home/meddameloni/dl-fair-voice/exp/counterfactual_fairness/evaluation/far_data__' + os.path.splitext(args.results_file)[0], 'wb') as f:
-    #     pickle.dump(far, f)
-    #
-    # with open(r'/home/meddameloni/dl-fair-voice/exp/counterfactual_fairness/evaluation/frr_data__' + os.path.splitext(args.results_file)[0], 'wb') as f:
-    #     pickle.dump(frr, f)
+    with open(r'/home/meddameloni/dl-fair-voice/exp/counterfactual_fairness/evaluation/far_data__' + os.path.splitext(os.path.basename(args.results_file))[0] + '.pkl', 'wb') as f:
+        pickle.dump(far, f)
+
+    with open(r'/home/meddameloni/dl-fair-voice/exp/counterfactual_fairness/evaluation/frr_data__' + os.path.splitext(os.path.basename(args.results_file))[0] + '.pkl', 'wb') as f:
+        pickle.dump(frr, f)
 
     if args.far_label_0_le is not None or args.frr_label_0_le is not None:
         ev.hist_analysis_mapped_far_frr(

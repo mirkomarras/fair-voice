@@ -80,6 +80,25 @@ class AudioFeatureAnalyzer:
             annot = np.array(p_value_info, dtype=object)
             return sns.heatmap(data=out_df, annot=annot, fmt='s', **sns_kw)  # , annot_kws={'rotation': 'vertical'})
 
+    def distribution_boxplot(self, hue, subset=None, sub_feat_axs=None, sns_kw=None):
+        cols = subset or self._df_feat.columns
+        sns_kw = sns_kw or {}
+
+        df = self._df_feat[cols + [hue]]
+        df = pd.melt(df.reset_index(drop=True), id_vars=[hue])
+
+        if sub_feat_axs is not None:
+            if 'ax' in sns_kw:
+                raise ValueError("Cannot use `sub_feat_axs` when `ax` is in `sns_kw`")
+
+            if len(sub_feat_axs.flat) < len(cols):
+                raise ValueError("Number of columns should be lower or equal than the number of axes")
+
+            for ax, col in zip(sub_feat_axs.flat, cols):
+                sns.boxplot(x="variable", y="value", data=df[df['variable'] == col], hue=hue, ax=ax, **sns_kw)
+        else:
+            return sns.boxplot(x="variable", y="value", data=df, hue=hue, **sns_kw)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Audio Features Extraction')
@@ -104,13 +123,13 @@ if __name__ == "__main__":
             # 'rms',
             # 'max',
             # 'duration_seconds',
-            'jitter_localabsolute',
-            # 'jitter_local',
+            # 'jitter_localabsolute',
+            'jitter_local',
             # 'jitter_rap',
             # 'jitter_ppq5',
             # 'jitter_ddp',
-            # 'shimmer_localdB',
-            'shimmer_local',
+            'shimmer_localdB',
+            # 'shimmer_local',
             # 'shimmer_apq3',
             # 'shimmer_apq5',
             # 'shimmer_apq11',
@@ -118,15 +137,14 @@ if __name__ == "__main__":
             'hnr',
             'f0_mean',
             'f0_std',
-            'number_syllables',
-            'number_pauses',
-            'rate_of_speech',
-            'articulation_rate',
+            # 'number_syllables',
+            # 'number_pauses',
+            # 'rate_of_speech',
+            # 'articulation_rate',
             'speaking_duration_without_pauses',
             # 'speaking_duration_with_pauses',
-            'balance',
-            'gender',
-            'age'
+            # 'balance',
+            # 'gender',
             # 'mood'
         ]
     else:
@@ -134,11 +152,25 @@ if __name__ == "__main__":
 
     fig, ax = plt.subplots(1, 1, figsize=(8, 8))
     corr = afa.correlation_heatmap(subset=features_subset, sns_kw={'ax': ax})
-    plt.tight_layout()
-    plt.savefig(os.path.join(args.save_path, 'audio_features_correlation.png'))
+    fig.tight_layout()
+    fig.savefig(os.path.join(args.save_path, 'audio_features_correlation.png'))
     plt.close()
 
     stat_diff = afa.mean_stat_difference(["gender", "age"], subset=features_subset)
     plt.tight_layout()
     plt.savefig(os.path.join(args.save_path, 'audio_features_stat_difference.png'))
+    plt.close()
+
+    fig, axs = plt.subplots(3, 3, figsize=(12, 12))
+    fig.delaxes(axs[2, 1])
+    fig.delaxes(axs[2, 2])
+    afa.distribution_boxplot(
+        "gender",
+        subset=['signaltonoise_dB', 'dBFS', 'jitter_local', 'shimmer_localdB', 'hnr', 'f0_mean', 'f0_std'],
+        sub_feat_axs=axs
+    )
+    for ax in axs.flat:
+        ax.set_xlabel('')
+    plt.tight_layout()
+    plt.savefig(os.path.join(args.save_path, 'distribution_barplot.png'))
     plt.close()

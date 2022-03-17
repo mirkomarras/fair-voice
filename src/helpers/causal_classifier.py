@@ -1,14 +1,18 @@
-import json
 import os
+import json
 import pickle
 import argparse
+
 import numpy as np
 import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
 from sklearn.metrics import f1_score, roc_auc_score, balanced_accuracy_score
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import GridSearchCV, train_test_split
+from sklearn.exceptions import NotFittedError
 
 from inputer import DataInputer
 
@@ -54,6 +58,7 @@ class CausalClassifier:
             self._classifier = LogisticRegression()
         else:
             raise ValueError("Causal Classifier alias not supported!")
+        self._best_gs_res = None
 
         if test_size:
             self._train_set_X, self._test_set_X = train_test_split(self.dataset,
@@ -115,6 +120,7 @@ class CausalClassifier:
                                "score": gs.best_score_,
                                "gs": gs})
             gs_res = sorted(gs_res, key=lambda x: x["score"])
+            self._best_gs_res = gs_res[0]
             y_pred = gs_res[0]["classifier"].predict(self._train_set_X)
             metrics = {"f1_score": f1_score(self._train_set_Y, y_pred, average="weighted"),
                        "roc_auc_score": roc_auc_score(self._train_set_Y, y_pred, average="weighted"),
@@ -183,6 +189,25 @@ class CausalClassifier:
 
         return params_grid
 
+    def is_fitted(self):
+        try:
+            self._classifier.predict(some_test_data)
+            return True
+        except NotFittedError:
+            return False
+
+    def importance_barplot(self, sns_kw=None):
+        sns_kw = sns_kw or {}
+        if self.is_fitted():
+            if args.causal_classifier == "RF":
+                feat_names = self.train_set[0].columns.to_numpy().astype(str)
+                feat_importance = self._best_gs_res["classifier"].feature_importances_
+
+                df = pd.DataFrame.from_dict(dict(zip(feat_names, feat_importance)), orient='index')
+                df = df.sort_values(0, ascending=False).T
+
+                sns.barplot(data=df, **sns_kw)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Causal Logistic Regression Classifier training pipeline')
@@ -223,6 +248,7 @@ if __name__ == "__main__":
             record_to_add["age"] = far_labels[lan][user][1].split()[1]
             record_to_add["label"] = 0 if far_labels[lan][user][0] > 0 else 1
             audio_features_dataset = audio_features_dataset.append(record_to_add, ignore_index=True)
+    audio_features_dataset.loc[np.isinf(audio_features_dataset['signaltonoise_dB']), 'signaltonoise_dB'] = -1
     print("Dataset ready!")
 
     print("Setting up Causal Classifier...")
@@ -260,6 +286,11 @@ if __name__ == "__main__":
             args.metrics_features_save_folderpath,
             f'{metadata_filename}.csv'
         ), index=False)
+
+        causal_classifier.importance_barplot()
+        plt.xticks(rotation='vertical')
+        plt.tight_layout()
+        plt.savefig(os.path.join(args.metrics_features_save_folderpath, f"barplot#{metadata_filename}.json"))
     elif args.causal_classifier == "LR":
         coef, intercept, metrics = causal_classifier.fit()
         print("Training done!")
