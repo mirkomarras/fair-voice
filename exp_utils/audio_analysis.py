@@ -7,13 +7,14 @@ import pandas as pd
 import pandas.api.types as pd_types
 import seaborn as sns
 import matplotlib.pyplot as plt
+import matplotlib.cbook as mat_cb
 from scipy.stats import ttest_ind
 
 
 class AudioFeatureAnalyzer:
 
     PV005 = '*'
-    PV01 = '^'
+    PV001 = '^'
     
     def __init__(self, path):
         self._audio_f_path = path
@@ -68,7 +69,7 @@ class AudioFeatureAnalyzer:
                 gr2 = gr2[np.isfinite(gr2)]
                 stat, pval = ttest_ind(gr1, gr2)
                 stat_data.append(stat)
-                p_v_info.append(self.PV005 if pval <= 0.05 else (self.PV01 if pval <= 0.1 else ''))
+                p_v_info.append(self.PV001 if pval <= 0.01 else (self.PV005 if pval <= 0.05 else ''))
             out_data.append(stat_data)
             p_value_info.append(p_v_info)
 
@@ -80,12 +81,12 @@ class AudioFeatureAnalyzer:
             annot = np.array(p_value_info, dtype=object)
             return sns.heatmap(data=out_df, annot=annot, fmt='s', **sns_kw)  # , annot_kws={'rotation': 'vertical'})
 
-    def distribution_boxplot(self, hue, subset=None, sub_feat_axs=None, sns_kw=None):
+    def distribution_boxplot(self, hue, subset=None, sub_feat_axs=None, lower_gr_eq=None, min_diff_eq=None, sns_kw=None):
         cols = subset or self._df_feat.columns
         sns_kw = sns_kw or {}
 
         df = self._df_feat[cols + [hue]]
-        df = pd.melt(df.reset_index(drop=True), id_vars=[hue])
+        df = pd.melt(df.reset_index(), id_vars=['lang', 'id_user', 'audio', hue])
 
         if sub_feat_axs is not None:
             if 'ax' in sns_kw:
@@ -95,7 +96,26 @@ class AudioFeatureAnalyzer:
                 raise ValueError("Number of columns should be lower or equal than the number of axes")
 
             for ax, col in zip(sub_feat_axs.flat, cols):
-                sns.boxplot(x="variable", y="value", data=df[df['variable'] == col], hue=hue, ax=ax, **sns_kw)
+                data = df[df['variable'] == col]
+                if lower_gr_eq is not None and col == "f0_mean":
+                    min_diff_eq = min_diff_eq or data['value'].std()
+                    hue_gb = dict(data.groupby(hue).__iter__())
+                    grs = list(hue_gb.keys())
+                    temp_data = pd.concat(list(hue_gb.values()))
+                    print("len:", len(temp_data))
+                    print("users:", len(temp_data['id_user'].unique()))
+                    while abs(hue_gb[grs[0]]['value'].median() - hue_gb[grs[1]]['value'].median()) > min_diff_eq:
+                        for gr, df_gr in hue_gb.items():
+                            func = "min" if gr == lower_gr_eq else "max"
+                            lang, user, del_a = df_gr.loc[np.isclose(df_gr['value'].astype(float), getattr(df_gr['value'], func)())][['lang', 'id_user','audio']].iloc[0]
+                            hue_gb[gr] = df_gr[~((df_gr['lang'] == lang) & (df_gr['id_user'] == user) & (df_gr['audio'] == del_a))]
+                    data = pd.concat(list(hue_gb.values()))
+                    print("len:", len(data))
+                    print("users:", len(data['id_user'].unique()))
+                # if col == "f0_mean":
+                    # bs = mat_cb.boxplot_stats(data["value"].dropna())
+                    # data = data[~data['value'].isin(bs.pop(0)['fliers']) & data['g']]
+                sns.boxplot(x="variable", y="value", data=data, hue=hue, ax=ax, **sns_kw)
         else:
             return sns.boxplot(x="variable", y="value", data=df, hue=hue, **sns_kw)
 
@@ -164,13 +184,17 @@ if __name__ == "__main__":
     fig, axs = plt.subplots(3, 3, figsize=(12, 12))
     fig.delaxes(axs[2, 1])
     fig.delaxes(axs[2, 2])
+    hue = "gender"
     afa.distribution_boxplot(
-        "gender",
+        hue,
         subset=['signaltonoise_dB', 'dBFS', 'jitter_local', 'shimmer_localdB', 'hnr', 'f0_mean', 'f0_std'],
-        sub_feat_axs=axs
+        sub_feat_axs=axs,
+        lower_gr_eq="male",
+        # min_diff_eq=1,
+        sns_kw={'palette': ['#F5793A', '#A95AA1']}
     )
     for ax in axs.flat:
         ax.set_xlabel('')
     plt.tight_layout()
-    plt.savefig(os.path.join(args.save_path, 'distribution_barplot.png'))
+    plt.savefig(os.path.join(args.save_path, f'{hue.upper()}_distribution_barplot_hue.png'))
     plt.close()
