@@ -205,7 +205,7 @@ class CausalClassifier:
 
     def is_fitted(self):
         try:
-            self._classifier.predict(self._train_set_X.head())
+            self.classifier.predict(self._train_set_X.head())
             return True
         except NotFittedError:
             return False
