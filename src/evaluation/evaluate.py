@@ -220,24 +220,27 @@ class Evaluator:
 if __name__ == "__main__":
     """
     Resnet34
-    python3 evaluate.py --results_file /home/meddameloni/dl-fair-voice/exp/counterfactual_fairness/results/resnet34vox_English-Spanish-train1@15_920_15032022_test_ENG_SPA_75users_6samples_50neg_5pos#00_10.csv --plots_kde_path "/home/meddameloni/dl-fair-voice/exp/counterfactual_fairness/evaluation/plots/{}_kde__resnet34vox_English-Spanish-train1@15_920_15032022_test_ENG_SPA_75users_6samples_50neg_5pos#00_10.png" --far_label_0_le 0 --frr_label_0_le 0 --plots_hist_path "/home/meddameloni/dl-fair-voice/exp/counterfactual_fairness/evaluation/plots/{}_0_0_hist__resnet34vox_English-Spanish-train1@15_920_15032022_test_ENG_SPA_75users_6samples_50neg_5pos#00_10.png"
+    python3 evaluate.py --results_file /home/meddameloni/dl-fair-voice/exp/counterfactual_fairness/results/resnet34vox_English-Spanish-train1@15_920_20032022_test_ENG_SPA_75users_6samples_50neg_5pos#00_10.csv --plots_kde_filepath "/home/meddameloni/dl-fair-voice/exp/counterfactual_fairness/evaluation/plots/{}_kde__resnet34vox_English-Spanish-train1@15_920_20032022_test_ENG_SPA_75users_6samples_50neg_5pos#00_10.png" --far_label_0_le 0 --frr_label_0_le 0 --plots_hist_filepath "/home/meddameloni/dl-fair-voice/exp/counterfactual_fairness/evaluation/plots/{}_0_0_hist__resnet34vox_English-Spanish-train1@15_920_20032022_test_ENG_SPA_75users_6samples_50neg_5pos#00_10.png"
     
     X-Vector
-    python3 evaluate.py --results_file /home/meddameloni/dl-fair-voice/exp/counterfactual_fairness/results/xvector_English-Spanish-train1@13_992_15032022_test_ENG_SPA_75users_6samples_50neg_5pos#00_10.csv --plots_kde_path "/home/meddameloni/dl-fair-voice/exp/counterfactual_fairness/evaluation/plots/{}_kde__xvector_English-Spanish-train1@13_992_15032022_test_ENG_SPA_75users_6samples_50neg_5pos#00_10.png" --far_label_0_le 0 --frr_label_0_le 0 --plots_hist_path "/home/meddameloni/dl-fair-voice/exp/counterfactual_fairness/evaluation/plots/{}_0_0_hist__xvector_English-Spanish-train1@13_992_15032022_test_ENG_SPA_75users_6samples_50neg_5pos#00_10.png"
+    python3 evaluate.py --results_file /home/meddameloni/dl-fair-voice/exp/counterfactual_fairness/results/xvector_English-Spanish-train1@13_992_20032022_test_ENG_SPA_75users_6samples_50neg_5pos#00_10.csv --plots_kde_filepath "/home/meddameloni/dl-fair-voice/exp/counterfactual_fairness/evaluation/plots/{}_kde__xvector_English-Spanish-train1@13_992_20032022_test_ENG_SPA_75users_6samples_50neg_5pos#00_10.png" --far_label_0_le 0 --frr_label_0_le 0 --plots_hist_filepath "/home/meddameloni/dl-fair-voice/exp/counterfactual_fairness/evaluation/plots/{}_0_0_hist__xvector_English-Spanish-train1@13_992_20032022_test_ENG_SPA_75users_6samples_50neg_5pos#00_10.png"
     """
 
     parser = argparse.ArgumentParser(description='Tensorflow Results Evaluation')
 
     # Parameters for testing a verifier against eer
     parser.add_argument('--results_file', dest='results_file', default='./results/resnet34vox_English-Spanish-train1@15_920_08032022_test_ENG_SPA_75users_6samples_50neg_5pos#00_10.csv', type=str, action='store', help='Results file path')
-    parser.add_argument('--plots_kde_path', dest='plots_kde_path', default='./plots/{}_plot.png', type=str, action='store', help='Path to save kde plots. It must contain a placeholder for formatting "FAR" or "FRR"')
+    parser.add_argument('--plots_kde_filepath', dest='plots_kde_path', default='./plots/{}_plot.png', type=str, action='store', help='Path to save kde plots. It must contain a placeholder for formatting "FAR" or "FRR"')
     parser.add_argument('--far_label_0_le', dest='far_label_0_le', default=None, type=float, action='store', help='FAR values lower or equal to this parameter are mapped to 0, otherwise 1')
     parser.add_argument('--frr_label_0_le', dest='frr_label_0_le', default=None, type=float, action='store', help='FRR values lower or equal to this parameter are mapped to 0, otherwise 1')
-    parser.add_argument('--plots_hist_path', dest='plots_hist_path', default='./plots/{}_plot.png', type=str, action='store', help='Path to save histogram plots. It must contain a placeholder for formatting "FAR" or "FRR"')
+    parser.add_argument('--plots_hist_filepath', dest='plots_hist_path', default='./plots/{}_plot.png', type=str, action='store', help='Path to save histogram plots. It must contain a placeholder for formatting "FAR" or "FRR"')
 
     args = parser.parse_args()
 
     ev = Evaluator(args.results_file)
+
+    if not os.path.exists(os.path.dirname(args.plots_kde_path)):
+        os.makedirs(os.path.dirname(args.plots_kde_path))
 
     ev.kde_analysis(plots_path=args.plots_kde_path)
     far, frr = ev.kde_analysis(return_far_frr=True)
@@ -247,6 +250,9 @@ if __name__ == "__main__":
 
     with open(r'/home/meddameloni/dl-fair-voice/exp/counterfactual_fairness/evaluation/frr_data__' + os.path.splitext(os.path.basename(args.results_file))[0] + '.pkl', 'wb') as f:
         pickle.dump(frr, f)
+
+    if not os.path.exists(os.path.dirname(args.plots_hist_path)):
+        os.makedirs(os.path.dirname(args.plots_hist_path))
 
     if args.far_label_0_le is not None or args.frr_label_0_le is not None:
         ev.hist_analysis_mapped_far_frr(

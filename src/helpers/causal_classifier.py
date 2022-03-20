@@ -105,12 +105,7 @@ class CausalClassifier:
     def fit(self):
         if not self._gs_list:
             self.classifier.fit(self._train_set_X, self._train_set_Y)
-            if self.__cc == "RF":
-                return self.classifier.feature_importances_
-            elif self.__cc == "LR":
-                return self.classifier.coef_, self.classifier.intercept_
-            else:
-                raise ValueError("Wrong Estimator!")
+            return self.feature_weights
         else:
             gs_res = []
             for gs in self._gs_list:
@@ -128,12 +123,28 @@ class CausalClassifier:
             if self._save_path:
                 with open(self._save_path, 'wb') as model_file:
                     pickle.dump(gs_res[0]["classifier"], model_file)
-            if self.__cc == "RF":
-                return gs_res[0]["classifier"].feature_importances_, metrics
-            elif self.__cc == "LR":
-                return gs_res[0]["classifier"].coef_, gs_res[0]["classifier"].intercept_, metrics
+
+            return self.feature_weights, metrics
+
+    @property
+    def feature_weights(self):
+        if self.is_fitted():
+            if not self._gs_list:
+                if self.__cc == "RF":
+                    return self.classifier.feature_importances_
+                elif self.__cc == "LR":
+                    return self.classifier.coef_
+                else:
+                    raise NotImplementedError("Estimator not supported")
             else:
-                raise ValueError("Wrong Estimator!")
+                if self.__cc == "RF":
+                    return self._best_gs_res["classifier"].feature_importances_, metrics
+                elif self.__cc == "LR":
+                    return self._best_gs_res["classifier"].coef_, metrics
+                else:
+                    raise NotImplementedError("Estimator not supported")
+
+        return None
 
     @classmethod
     def generate_grid(cls, classifier: str = "RF"):
@@ -191,7 +202,7 @@ class CausalClassifier:
 
     def is_fitted(self):
         try:
-            self._classifier.predict(some_test_data)
+            self._classifier.predict(self._train_set_X.head())
             return True
         except NotFittedError:
             return False
@@ -199,14 +210,13 @@ class CausalClassifier:
     def importance_barplot(self, sns_kw=None):
         sns_kw = sns_kw or {}
         if self.is_fitted():
-            if args.causal_classifier == "RF":
-                feat_names = self.train_set[0].columns.to_numpy().astype(str)
-                feat_importance = self._best_gs_res["classifier"].feature_importances_
+            feat_names = self.train_set[0].columns.to_numpy().astype(str)
+            feat_weights = self.feature_weights
 
-                df = pd.DataFrame.from_dict(dict(zip(feat_names, feat_importance)), orient='index')
-                df = df.sort_values(0, ascending=False).T
+            df = pd.DataFrame.from_dict(dict(zip(feat_names, feat_weights)), orient='index')
+            df = df.sort_values(0, ascending=False).T
 
-                sns.barplot(data=df, **sns_kw)
+            sns.barplot(data=df, **sns_kw)
 
 
 if __name__ == "__main__":
@@ -281,28 +291,30 @@ if __name__ == "__main__":
             arr=feature_importance
         )
 
-        df = pd.DataFrame.from_dict(dict(zip(features_names, feature_importance)), orient='index')
-        df.sort_values(0, ascending=False).T.to_csv(os.path.join(
-            args.metrics_features_save_folderpath,
-            f'{metadata_filename}.csv'
-        ), index=False)
-
-        causal_classifier.importance_barplot()
-        plt.xticks(rotation='vertical')
-        plt.tight_layout()
-        plt.savefig(os.path.join(args.metrics_features_save_folderpath, f"barplot#{metadata_filename}.json"))
+        feature_weights = feature_importance
     elif args.causal_classifier == "LR":
-        coef, intercept, metrics = causal_classifier.fit()
+        coef, metrics = causal_classifier.fit()
         print("Training done!")
         print("Saving Causal Classifier weights...")
 
         coef_path = f"coef_{metadata_filename}.npy"
 
-        intercept_path = f"intercept_{metadata_filename}.npy"
         np.save(file=os.path.join(args.metrics_features_save_folderpath, coef_path), arr=coef)
-        np.save(file=os.path.join(args.metrics_features_save_folderpath, intercept_path), arr=intercept)
+
+        feature_weights = coef
     else:
         raise ValueError(f"`{args.causal_classifier}` is not a supported classifier. Select one of {cc_action.choices}")
+
+    df = pd.DataFrame.from_dict(dict(zip(features_names, feature_weights)), orient='index')
+    df.sort_values(0, ascending=False).T.to_csv(os.path.join(
+        args.metrics_features_save_folderpath,
+        f'{metadata_filename}.csv'
+    ), index=False)
+
+    causal_classifier.importance_barplot()
+    plt.xticks(rotation='vertical')
+    plt.tight_layout()
+    plt.savefig(os.path.join(args.metrics_features_save_folderpath, f"barplot#{metadata_filename}.json"))
 
     with open(os.path.join(args.metrics_features_save_folderpath, f"metrics_{metadata_filename}.json"), "w")\
             as metrics_file:

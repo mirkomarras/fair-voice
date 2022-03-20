@@ -55,10 +55,10 @@ def preprocess_data(metadata_path,
             for lang in user_in:
                 lang_g_df = g_df[g_df["language_l1"] == lang]
                 lang_g_df = lang_g_df[lang_g_df["id_user"].isin(user_in[lang])]
-                new_g_df.append(lang_g_df)
+                new_g_df.append(lang_g_df.sample(n))
             g_df = pd.concat(new_g_df)
 
-        new_df.append(g_df.sample(n))
+        new_df.append(g_df)
 
     new_df = pd.concat(new_df)
 
