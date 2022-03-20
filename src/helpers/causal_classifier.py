@@ -92,7 +92,10 @@ class CausalClassifier:
 
     @property
     def classifier(self):
-        return self._classifier
+        if not self._gs_list:
+            return self._classifier
+        else:
+            return self._best_gs_res
 
     @property
     def train_set(self):
