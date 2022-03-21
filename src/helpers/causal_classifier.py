@@ -108,7 +108,7 @@ class CausalClassifier:
     def fit(self):
         if not self._gs_list:
             self.classifier.fit(self._train_set_X, self._train_set_Y)
-            return self.feature_weights
+            metrics = None
         else:
             gs_res = []
             for gs in self._gs_list:
@@ -123,11 +123,15 @@ class CausalClassifier:
             metrics = {"f1_score": f1_score(self._train_set_Y, y_pred, average="weighted"),
                        "roc_auc_score": roc_auc_score(self._train_set_Y, y_pred, average="weighted"),
                        "balanced_accuracy_score": balanced_accuracy_score(self._train_set_Y, y_pred)}
-            if self._save_path:
-                with open(self._save_path, 'wb') as model_file:
-                    pickle.dump(gs_res[0]["classifier"], model_file)
 
-            return self.feature_weights, metrics
+        self.save()
+
+        return self.feature_weights if not self._gs_list else self.feature_weights, metrics
+
+    def save(self):
+        if self._save_path:
+            with open(self._save_path, 'wb') as model_file:
+                pickle.dump(self.classifier, model_file)
 
     @property
     def feature_weights(self):
@@ -141,9 +145,9 @@ class CausalClassifier:
                     raise NotImplementedError("Estimator not supported")
             else:
                 if self.__cc == "RF":
-                    return self._best_gs_res["classifier"].feature_importances_, metrics
+                    return self._best_gs_res["classifier"].feature_importances_
                 elif self.__cc == "LR":
-                    return self._best_gs_res["classifier"].coef_, metrics
+                    return self._best_gs_res["classifier"].coef_
                 else:
                     raise NotImplementedError("Estimator not supported")
 
@@ -317,7 +321,7 @@ if __name__ == "__main__":
     causal_classifier.importance_barplot()
     plt.xticks(rotation='vertical')
     plt.tight_layout()
-    plt.savefig(os.path.join(args.metrics_features_save_folderpath, f"barplot#{metadata_filename}.json"))
+    plt.savefig(os.path.join(args.metrics_features_save_folderpath, f"barplot#{metadata_filename}.png"))
 
     with open(os.path.join(args.metrics_features_save_folderpath, f"metrics_{metadata_filename}.json"), "w")\
             as metrics_file:
