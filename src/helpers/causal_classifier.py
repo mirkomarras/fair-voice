@@ -95,7 +95,7 @@ class CausalClassifier:
         if not self._gs_list:
             return self._classifier
         else:
-            return self._best_gs_res
+            return self._best_gs_res["classifier"]
 
     @property
     def train_set(self):
