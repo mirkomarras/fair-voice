@@ -3,10 +3,12 @@ import json
 import pickle
 import argparse
 
+import alibi
 import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+import tensorflow as tf
 from sklearn.metrics import f1_score, roc_auc_score, balanced_accuracy_score
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
@@ -15,6 +17,8 @@ from sklearn.model_selection import GridSearchCV, train_test_split
 from sklearn.exceptions import NotFittedError
 
 from inputer import DataInputer
+
+tf.compat.v1.disable_eager_execution()
 
 
 class CausalClassifier:
@@ -58,7 +62,7 @@ class CausalClassifier:
             self._classifier = LogisticRegression()
         else:
             raise ValueError("Causal Classifier alias not supported!")
-        self._best_gs_res = None
+        self._best_gs_res = {}
 
         if test_size:
             self._train_set_X, self._test_set_X = train_test_split(self.dataset,
@@ -86,6 +90,9 @@ class CausalClassifier:
         else:
             self._params_grid, self._gs_list = None, None
 
+        self._explainer = None
+        self._explain_data = None
+
     @property
     def dataset(self):
         return self._dataset
@@ -96,6 +103,13 @@ class CausalClassifier:
             return self._classifier
         else:
             return self._best_gs_res["classifier"]
+
+    @classifier.setter
+    def classifier(self, val):
+        if not self._gs_list:
+            self._classifier = val
+        else:
+            self._best_gs_res["classifier"] = val
 
     @property
     def train_set(self):
@@ -132,6 +146,13 @@ class CausalClassifier:
         if self._save_path:
             with open(self._save_path, 'wb') as model_file:
                 pickle.dump(self.classifier, model_file)
+
+    def load(self):
+        if self._save_path:
+            with open(self._save_path, 'rb') as model_file:
+                self.classifier = pickle.load(model_file)
+        else:
+            raise TypeError(f"`model_path` has not been passed to CausalClassifier")
 
     @property
     def feature_weights(self):
@@ -225,6 +246,42 @@ class CausalClassifier:
 
             sns.barplot(data=df, **sns_kw)
 
+    def cem(self, mode='PN', pos_s=10, neg_s=10, demo_gr=None, cem_kwargs=None, fit_kwargs=None):
+        def pos_neg_sample(d, d_gr):
+            if d_gr is not None:
+                res = []
+                for gr, _df in d.groupby(d_gr):
+                    res.append(_df[_df[self._target_col_name] == "1.0"].sample(pos_s))
+                    res.append(_df[_df[self._target_col_name] == "0.0"].sample(neg_s))
+                return pd.concat(res).drop(columns=self._target_col_name)
+            else:
+                return pd.concat([
+                    d[d[self._target_col_name] == "1.0"].sample(pos_s), d[d[self._target_col_name] == "0.0"].sample(neg_s)
+                ]).drop(columns=self._target_col_name)
+
+        cem_kwargs = cem_kwargs or {}
+        fit_kwargs = fit_kwargs or {}
+
+        data = pd.concat(self.train_set, axis=1)
+        data = pos_neg_sample(data, demo_gr)
+        self._explain_data = data.to_numpy()
+
+        self._explainer = alibi.explainers.CEM(
+            lambda x: self.classifier.predict_proba(x),
+            shape=(1,) + data.shape[1:],
+            mode=mode,
+            feature_range=(self._explain_data.min(), self._explain_data.max()),
+            **cem_kwargs
+        )
+        self._explainer.fit(self._explain_data, **fit_kwargs)
+
+    def explain(self, sample, **kwargs):
+        return self._explainer.explain(sample, **kwargs)
+
+    @property
+    def explain_data(self):
+        return self._explain_data
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Causal Logistic Regression Classifier training pipeline')
@@ -245,6 +302,9 @@ if __name__ == "__main__":
     parser.add_argument('--metr_feats_sfolder', dest='metrics_features_save_folderpath',
                         default='metrics_features_causal_classifier', type=str, action='store',
                         help='Save folderpath to store the metrics and the feature importance')
+
+    parser.add_argument('--load', dest='load', default=False, action='store_true',
+                        help='--model_save_path will be used to load the model')
 
     args = parser.parse_args()
 
@@ -275,56 +335,79 @@ if __name__ == "__main__":
                                          test_size=0,
                                          classifier=args.causal_classifier,
                                          model_path=args.model_save_path)
-    print("Causal Classifier set up")
-
-    metadata_filename = f"{args.causal_classifier}_{os.path.splitext(os.path.basename(args.audio_label_path))[0]}"
 
     if not os.path.exists(args.metrics_features_save_folderpath):
         os.makedirs(args.metrics_features_save_folderpath)
 
-    features_names = causal_classifier.train_set[0].columns.to_numpy().astype(str)
-    np.save(
-        file=os.path.join(args.metrics_features_save_folderpath, f"features_names_{metadata_filename}.npy"),
-        arr=features_names
-    )
+    if not args.load:
+        print("Causal Classifier set up")
 
-    print("Start fitting...")
-    if args.causal_classifier == "RF":
-        feature_importance, metrics = causal_classifier.fit()
-        print("Training done!")
-        print("Saving Causal Classifier weights...")
+        metadata_filename = f"{args.causal_classifier}_{os.path.splitext(os.path.basename(args.audio_label_path))[0]}"
+
+        features_names = causal_classifier.train_set[0].columns.to_numpy().astype(str)
         np.save(
-            file=os.path.join(args.metrics_features_save_folderpath, f"feature_importance_{metadata_filename}.npy"),
-            arr=feature_importance
+            file=os.path.join(args.metrics_features_save_folderpath, f"features_names_{metadata_filename}.npy"),
+            arr=features_names
         )
 
-        feature_weights = feature_importance
-    elif args.causal_classifier == "LR":
-        coef, metrics = causal_classifier.fit()
-        print("Training done!")
-        print("Saving Causal Classifier weights...")
+        print("Start fitting...")
+        if args.causal_classifier == "RF":
+            feature_importance, metrics = causal_classifier.fit()
+            print("Training done!")
+            print("Saving Causal Classifier weights...")
+            np.save(
+                file=os.path.join(args.metrics_features_save_folderpath, f"feature_importance_{metadata_filename}.npy"),
+                arr=feature_importance
+            )
 
-        coef_path = f"coef_{metadata_filename}.npy"
+            feature_weights = feature_importance
+        elif args.causal_classifier == "LR":
+            coef, metrics = causal_classifier.fit()
+            print("Training done!")
+            print("Saving Causal Classifier weights...")
 
-        np.save(file=os.path.join(args.metrics_features_save_folderpath, coef_path), arr=coef)
+            coef_path = f"coef_{metadata_filename}.npy"
 
-        feature_weights = coef
+            np.save(file=os.path.join(args.metrics_features_save_folderpath, coef_path), arr=coef)
+
+            feature_weights = coef
+        else:
+            raise ValueError(f"`{args.causal_classifier}` is not a supported classifier. Select one of {cc_action.choices}")
+
+        df = pd.DataFrame.from_dict(dict(zip(features_names, feature_weights)), orient='index')
+        df.sort_values(0, ascending=False).T.to_csv(os.path.join(
+            args.metrics_features_save_folderpath,
+            f'{metadata_filename}.csv'
+        ), index=False)
+
+        causal_classifier.importance_barplot()
+        plt.xticks(rotation='vertical')
+        plt.tight_layout()
+        plt.savefig(os.path.join(args.metrics_features_save_folderpath, f"barplot#{metadata_filename}.png"))
+
+        with open(os.path.join(args.metrics_features_save_folderpath, f"metrics_{metadata_filename}.json"), "w")\
+                as metrics_file:
+            json.dump(metrics, metrics_file)
+
+        print("Causal Classifier weights stored!")
     else:
-        raise ValueError(f"`{args.causal_classifier}` is not a supported classifier. Select one of {cc_action.choices}")
+        causal_classifier.load()
+        print("Causal Classifier loaded")
 
-    df = pd.DataFrame.from_dict(dict(zip(features_names, feature_weights)), orient='index')
-    df.sort_values(0, ascending=False).T.to_csv(os.path.join(
-        args.metrics_features_save_folderpath,
-        f'{metadata_filename}.csv'
-    ), index=False)
+        cem_kwargs = {'eps': (0.05, 0.05)}
+        print("Kwargs for CEM:", cem_kwargs)
 
-    causal_classifier.importance_barplot()
-    plt.xticks(rotation='vertical')
-    plt.tight_layout()
-    plt.savefig(os.path.join(args.metrics_features_save_folderpath, f"barplot#{metadata_filename}.png"))
+        causal_classifier.cem(
+            demo_gr=[
+                "age_gender_language_x0_younger", # just one is enough. For value = 0 will take opposite group
+                "age_gender_language_x1_female"  # just one is enough. For value = 0 will take opposite group
+            ],
+            cem_kwargs=cem_kwargs
+        )
 
-    with open(os.path.join(args.metrics_features_save_folderpath, f"metrics_{metadata_filename}.json"), "w")\
-            as metrics_file:
-        json.dump(metrics, metrics_file)
+        explain_results = []
+        for sample in causal_classifier.explain_data:
+            explain_results.append(causal_classifier.explain(sample[np.newaxis, :]))
 
-    print("Causal Classifier weights stored!")
+        with open(os.path.join(args.metrics_features_save_folderpath, 'explain_results.pkl', 'rb')) as explain_file:
+            pickle.dump(explain_results, explain_file)
