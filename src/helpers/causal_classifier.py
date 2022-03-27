@@ -2,8 +2,12 @@ import os
 import json
 import pickle
 import argparse
+from collections import defaultdict
 
+import lime
+import lime.lime_tabular
 import alibi
+import tqdm
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -89,9 +93,6 @@ class CausalClassifier:
             self._classifier = None
         else:
             self._params_grid, self._gs_list = None, None
-
-        self._explainer = None
-        self._explain_data = None
 
     @property
     def dataset(self):
@@ -264,23 +265,33 @@ class CausalClassifier:
 
         data = pd.concat(self.train_set, axis=1)
         data = pos_neg_sample(data, demo_gr)
-        self._explain_data = data.to_numpy()
+        data = data.to_numpy()
 
-        self._explainer = alibi.explainers.CEM(
+        explainer = alibi.explainers.CEM(
             lambda x: self.classifier.predict_proba(x),
             shape=(1,) + data.shape[1:],
             mode=mode,
-            feature_range=(self._explain_data.min(), self._explain_data.max()),
+            feature_range=(data.min(), data.max()),
             **cem_kwargs
         )
-        self._explainer.fit(self._explain_data, **fit_kwargs)
+        explainer.fit(data, **fit_kwargs)
 
-    def explain(self, sample, **kwargs):
-        return self._explainer.explain(sample, **kwargs)
+        return explainer, data
 
-    @property
-    def explain_data(self):
-        return self._explain_data
+    def lime(self, categorical_features=None, **kwargs):
+        data = self.train_set[0]
+        feature_names = data.columns
+
+        categorical_features = np.where(data.columns.isin(categorical_features))[0]
+        data = data.values
+
+        lime_explainer = lime.lime_tabular.LimeTabularExplainer(data,
+                                                                class_names=self._target_col.unique(),
+                                                                feature_names=feature_names,
+                                                                categorical_features=categorical_features,
+                                                                **kwargs)
+
+        return lime_explainer, data
 
 
 if __name__ == "__main__":
@@ -306,26 +317,35 @@ if __name__ == "__main__":
     parser.add_argument('--load', dest='load', default=False, action='store_true',
                         help='--model_save_path will be used to load the model')
 
+    parser.add_argument('--cem', dest='cem', default=False, action='store_true', help='use cem explainer')
+
+    parser.add_argument('--lime', dest='lime', default=False, action='store_true', help='use cem explainer')
+
     args = parser.parse_args()
 
     print("Composing Dataset...")
+    # dataset_path = 'dataset.csv'
+    # if not os.path.exists(dataset_path):
     with open(args.audio_feature_path, "rb") as taf_pkl:
         test_audio_features = pickle.load(taf_pkl)
         with open(args.audio_label_path, "rb") as fsl_pkl:
             far_labels = pickle.load(fsl_pkl)
-        audio_features_dataset = pd.DataFrame()
+        record_to_add = defaultdict(list)
         for k, v in test_audio_features.items():
             elements = k.split("/")
             lan, user = elements[0], elements[1]
-            record_to_add = {}
             for ik, iv in v.items():
                 if ik not in ["gender", "mood", "age"]:
-                    record_to_add[ik] = iv
-            record_to_add["gender"] = far_labels[lan][user][1].split()[0]
-            record_to_add["age"] = far_labels[lan][user][1].split()[1]
-            record_to_add["label"] = 0 if far_labels[lan][user][0] > 0 else 1
-            audio_features_dataset = audio_features_dataset.append(record_to_add, ignore_index=True)
+                    record_to_add[ik].append(iv)
+            record_to_add["gender"].append(far_labels[lan][user][1].split()[0])
+            record_to_add["age"].append(far_labels[lan][user][1].split()[1])
+            record_to_add["label"].append(0 if far_labels[lan][user][0] > 0 else 1)
+        audio_features_dataset = pd.DataFrame.from_records(record_to_add)
     audio_features_dataset.loc[np.isinf(audio_features_dataset['signaltonoise_dB']), 'signaltonoise_dB'] = -1
+
+    # audio_features_dataset.to_csv(dataset_path, index=False)
+    # else:
+    #     audio_features_dataset = pd.read_csv(dataset_path)
     print("Dataset ready!")
 
     print("Setting up Causal Classifier...")
@@ -339,10 +359,10 @@ if __name__ == "__main__":
     if not os.path.exists(args.metrics_features_save_folderpath):
         os.makedirs(args.metrics_features_save_folderpath)
 
+    metadata_filename = f"{args.causal_classifier}_{os.path.splitext(os.path.basename(args.audio_label_path))[0]}"
+
     if not args.load:
         print("Causal Classifier set up")
-
-        metadata_filename = f"{args.causal_classifier}_{os.path.splitext(os.path.basename(args.audio_label_path))[0]}"
 
         features_names = causal_classifier.train_set[0].columns.to_numpy().astype(str)
         np.save(
@@ -394,20 +414,101 @@ if __name__ == "__main__":
         causal_classifier.load()
         print("Causal Classifier loaded")
 
-        cem_kwargs = {'eps': (0.05, 0.05)}
-        print("Kwargs for CEM:", cem_kwargs)
+        if args.cem:
+            print("Using CEM for explainability")
+            
+            cem_kwargs = {'eps': (0.05, 0.05)}
+            print("Kwargs for CEM:", cem_kwargs)
 
-        causal_classifier.cem(
-            demo_gr=[
-                "age_gender_language_x0_younger", # just one is enough. For value = 0 will take opposite group
-                "age_gender_language_x1_female"  # just one is enough. For value = 0 will take opposite group
-            ],
-            cem_kwargs=cem_kwargs
-        )
+            explainer, explain_data = causal_classifier.cem(
+                demo_gr=[
+                    "age_gender_language_x0_younger", # just one is enough. For value = 0 will take opposite group
+                    "age_gender_language_x1_female"  # just one is enough. For value = 0 will take opposite group
+                ],
+                cem_kwargs=cem_kwargs
+            )
 
-        explain_results = []
-        for sample in causal_classifier.explain_data:
-            explain_results.append(causal_classifier.explain(sample[np.newaxis, :]))
+            explain_results = []
+            for sample in explain_data:
+                explain_results.append(explainer.explain(sample[np.newaxis, :]))
 
-        with open(os.path.join(args.metrics_features_save_folderpath, 'explain_results.pkl', 'rb')) as explain_file:
-            pickle.dump(explain_results, explain_file)
+            with open(os.path.join(args.metrics_features_save_folderpath, 'cem_explain_results.pkl', 'rb')) as explain_file:
+                pickle.dump(explain_results, explain_file)
+        elif args.lime:
+            print("Using LIME for explainability")
+            
+            categorical_features = [
+                'age_gender_language_x0_younger',
+                'age_gender_language_x0_older',
+                'age_gender_language_x1_female',
+                'age_gender_language_x1_male',
+                'age_gender_language_x2_English',
+                'age_gender_language_x2_Spanish'
+            ]
+
+            explainer, explain_data = causal_classifier.lime(
+                categorical_features=categorical_features,
+                discretize_continuous=False
+            )
+
+            exp_path = os.path.join(args.metrics_features_save_folderpath, 'lime_explainations')
+            if not os.path.exists(exp_path):
+                os.makedirs(exp_path)
+                
+            def dict_concat(*args):
+                final = {}
+                for d in args:
+                    for key in d:
+                        if key not in final:
+                            final[key] = [d[key]]
+                        else:
+                            final[key].append(d[key])
+                            
+                return final
+
+            total_exp = []
+            for row in tqdm.tqdm(range(explain_data.shape[0]), desc="Lime explanations computation"):
+                exp = explainer.explain_instance(
+                    explain_data[row],
+                    causal_classifier.classifier.predict_proba,
+                    num_features=len(causal_classifier.train_set[0].columns),
+                    labels=(0, 1)
+                )
+
+                # exp.save_to_file(os.path.join(exp_path, 'exp.html'), labels=[0])
+                total_exp.append(dict(exp.local_exp[0]))
+
+                # row_exp_path = os.path.join(exp_path, f"row_{row}")
+                # if not os.path.exists(row_exp_path):
+                #     os.mkdir(row_exp_path)
+
+                # fig = exp.as_pyplot_figure(label=0)
+                # fig.tight_layout()
+                # fig.savefig(os.path.join(row_exp_path, 'exp_label=0.png'))
+                # plt.close()
+
+                # exp.save_to_file(os.path.join(row_exp_path, 'exp.html'), labels=(0, 1))
+            
+            all_users_exp = dict_concat(*total_exp)
+            all_users_exp = pd.DataFrame.from_dict(all_users_exp)
+            all_users_exp.to_csv(os.path.join(exp_path, "all_explanations_label=0.csv"), index=False)
+            exp.local_exp = {0: list(all_users_exp.mean().to_dict().items())}
+
+            fig = exp.as_pyplot_figure(label=0)
+            fig.tight_layout()
+            fig.savefig(os.path.join(exp_path, 'mean exp_label=0.png'))
+            plt.close()
+            with open(os.path.join(exp_path, 'explanation_lime.pkl'), 'wb') as file_exp:
+                pickle.dump(exp, file_exp)
+
+            assert len(causal_classifier.train_set[0]) == len(total_exp)
+            for gr_name, gr_df in causal_classifier.train_set[0].groupby(categorical_features):
+                gr_exp = dict_concat(*[total_exp[i] for i in gr_df.index])
+                gr_exp = pd.DataFrame.from_dict(gr_exp)
+                gr_exp.to_csv(os.path.join(exp_path, f"{gr_name}_label=0.csv"), index=False)
+                exp.local_exp = {0: list(gr_exp.mean().to_dict().items())}
+
+                fig = exp.as_pyplot_figure(label=0)
+                fig.tight_layout()
+                fig.savefig(os.path.join(exp_path, f'{gr_name} mean exp_label=0.png'))
+                plt.close()

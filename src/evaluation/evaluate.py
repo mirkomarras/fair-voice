@@ -184,8 +184,10 @@ class Evaluator:
             ).reset_index().rename(columns={'index': 'users'})
 
             plot_func(x="FAR", data=far_data_plot, hue="Demographic Group",
+                      hue_order=np.sort(far_data_plot["Demographic Group"].unique()),
                       ax=axs_far[i] if n_languages > 1 else axs_far, **plot_kwargs)
             plot_func(x="FRR", data=frr_data_plot, hue="Demographic Group",
+                      hue_order=np.sort(far_data_plot["Demographic Group"].unique()),
                       ax=axs_frr[i] if n_languages > 1 else axs_frr, **plot_kwargs)
             axs_far[i].set_title(lang)
             axs_frr[i].set_title(lang)

@@ -1,6 +1,7 @@
 import os
 import pickle
 import argparse
+from typing import Callable, Union, Dict, Any
 
 import numpy as np
 import pandas as pd
@@ -15,27 +16,27 @@ class AudioFeatureAnalyzer:
 
     PV005 = '*'
     PV001 = '^'
-    
+
     def __init__(self, path):
         self._audio_f_path = path
         with open(self._audio_f_path, 'rb') as f:
             self._audio_f = pickle.load(f)
-        
+
         self._df_feat = self._audio_f_to_df(self._audio_f)
-        
+
     @staticmethod
     def _audio_f_to_df(audio_f):
         df = pd.DataFrame.from_dict(audio_f, orient='index').reset_index()
-        
+
         df[["lang", "id_user", "audio"]] = df['index'].str.split(os.sep, expand=True)
         del df['index']
-        
+
         return df.set_index(["lang", "id_user", "audio"])
-    
+
     def correlation_heatmap(self, subset=None, method='pearson', sns_kw=None):
         cols = subset or self._df_feat.columns
         sns_kw = sns_kw or {}
-        
+
         corr_df = self._df_feat[cols].corr(method=method)
         rename = {
             'speaking_duration_with_pauses': 'speak_with_pauses',
@@ -44,7 +45,7 @@ class AudioFeatureAnalyzer:
         corr_df = corr_df.rename(index=rename, columns=rename)
 
         return sns.heatmap(data=corr_df, xticklabels=True, yticklabels=True, linewidths=.2, **sns_kw)
-    
+
     def mean_stat_difference(self, grouping, subset=None, return_stat_data=False, sns_kw=None):
         cols = subset or self._df_feat.columns
         sns_kw = sns_kw or {}
@@ -81,12 +82,25 @@ class AudioFeatureAnalyzer:
             annot = np.array(p_value_info, dtype=object)
             return sns.heatmap(data=out_df, annot=annot, fmt='s', **sns_kw)  # , annot_kws={'rotation': 'vertical'})
 
-    def distribution_boxplot(self, hue, subset=None, sub_feat_axs=None, lower_gr_eq=None, min_diff_eq=None, sns_kw=None):
+    def distribution_boxplot(self,
+                             hue,
+                             subset=None,
+                             sub_feat_axs=None,
+                             equalize_stat=False,
+                             results_file=None,
+                             feat_imp_file=None,
+                             n_eq=2,
+                             p_value=0.05,
+                             sns_kw=None):
         cols = subset or self._df_feat.columns
         sns_kw = sns_kw or {}
 
+        df_imp = pd.read_csv(feat_imp_file)
+        imp_list = df_imp.T.sort_values(0, ascending=False).index[:n_eq].tolist()
+        cols = [c for c in imp_list if c in cols]
+
         df = self._df_feat[cols + [hue]]
-        df = pd.melt(df.reset_index(), id_vars=['lang', 'id_user', 'audio', hue])
+        df = [pd.melt(df.reset_index(), id_vars=['lang', 'id_user', 'audio', hue])]
 
         if sub_feat_axs is not None:
             if 'ax' in sns_kw:
@@ -96,26 +110,65 @@ class AudioFeatureAnalyzer:
                 raise ValueError("Number of columns should be lower or equal than the number of axes")
 
             for ax, col in zip(sub_feat_axs.flat, cols):
-                data = df[df['variable'] == col]
-                if lower_gr_eq is not None and col == "f0_mean":
-                    min_diff_eq = min_diff_eq or data['value'].std()
+                print(f"Plotting {col}")
+                data = df[0][df[0]['variable'] == col]
+
+                if equalize_stat:
                     hue_gb = dict(data.groupby(hue).__iter__())
                     grs = list(hue_gb.keys())
                     temp_data = pd.concat(list(hue_gb.values()))
                     print("len:", len(temp_data))
-                    print("users:", len(temp_data['id_user'].unique()))
-                    while abs(hue_gb[grs[0]]['value'].median() - hue_gb[grs[1]]['value'].median()) > min_diff_eq:
+                    print("users:", len(temp_data[['lang', 'id_user']].apply(lambda x: (x['lang'], x['id_user']), axis=1).unique()))
+
+                    while True:
+                        gr1 = hue_gb[grs[0]]['value']
+                        gr2 = hue_gb[grs[1]]['value']
+                        gr1 = gr1[np.isfinite(gr1)]
+                        gr2 = gr2[np.isfinite(gr2)]
+                        if ttest_ind(gr1, gr2)[1] > p_value:
+                            break
+
+                        funcs = dict(zip(grs, ["min", "max"] if np.median(gr1) <= np.median(gr2) else ["max", "min"]))
                         for gr, df_gr in hue_gb.items():
-                            func = "min" if gr == lower_gr_eq else "max"
-                            lang, user, del_a = df_gr.loc[np.isclose(df_gr['value'].astype(float), getattr(df_gr['value'], func)())][['lang', 'id_user','audio']].iloc[0]
-                            hue_gb[gr] = df_gr[~((df_gr['lang'] == lang) & (df_gr['id_user'] == user) & (df_gr['audio'] == del_a))]
+                            data_to_del = df_gr.loc[
+                                np.isclose(df_gr['value'].astype(float), getattr(df_gr['value'], funcs[gr])())
+                            ]
+                            lang, user, del_a = data_to_del[['lang', 'id_user','audio']].iloc[0]
+                            hue_gb[gr] = df_gr[
+                                ~((df_gr['lang'] == lang) & (df_gr['id_user'] == user) & (df_gr['audio'] == del_a))
+                            ]
+                            df[0] = df[0][
+                                ~((df[0]['lang'] == lang) & (df[0]['id_user'] == user) & (df[0]['audio'] == del_a))
+                            ]
                     data = pd.concat(list(hue_gb.values()))
-                    print("len:", len(data))
-                    print("users:", len(data['id_user'].unique()))
-                # if col == "f0_mean":
-                    # bs = mat_cb.boxplot_stats(data["value"].dropna())
-                    # data = data[~data['value'].isin(bs.pop(0)['fliers']) & data['g']]
+                    print("\nlen:", len(data))
+                    print("users:", len(data[['lang', 'id_user']].apply(lambda x: (x['lang'], x['id_user']), axis=1).unique()), '\n')
+
+                    # df[0] = pd.concat([df[0][df[0]['variable'] != col], data])
+
                 sns.boxplot(x="variable", y="value", data=data, hue=hue, ax=ax, **sns_kw)
+
+                with open(results_file, 'rb') as f:
+                    res_data = pickle.load(f)
+                res_rate = os.path.basename(results_file).split('_')[0]
+
+                handles, labels = ax.get_legend_handles_labels()
+
+                rate_labels = {}
+                rates_per_group = {}
+                for gr, gr_df in data.groupby(hue):
+                    gr_df[res_rate] = gr_df[['lang', 'id_user']].apply(lambda x: res_data[x['lang']][x['id_user']][0],
+                                                                       axis=1)
+                    rates_per_group[gr] = gr_df[res_rate].to_numpy()
+                    rate_labels[gr] = str(round(gr_df[res_rate].mean(), 3))
+
+                mean_r = round(np.concatenate(list(rates_per_group.values())).mean(), 3)
+                for gr in rate_labels:
+                    r = rates_per_group[gr]
+                    rate_labels[gr] = f"{rate_labels[gr]} | {len(r[r > mean_r])}/{len(r)} > {res_rate} = {mean_r}"
+
+                labels = list(map(lambda x: f"{x} {rate_labels[x]}", labels))
+                ax.legend(handles, labels)
         else:
             return sns.boxplot(x="variable", y="value", data=df, hue=hue, **sns_kw)
 
@@ -128,6 +181,16 @@ if __name__ == "__main__":
                         type=str, action='store', help='Path of the audio features extracted by AudioFeatureExtractor')
     parser.add_argument('--features', dest='features', default=[], nargs='+',
                         type=str, action='store', help='List of the features to extract')
+    parser.add_argument('--results_file', dest='results_file',
+                        default=r'/home/meddameloni/dl-fair-voice/exp/counterfactual_fairness/evaluation/far_data__resnet34vox_English-Spanish-train1@15_920_15032022_test_ENG_SPA_75users_6samples_50neg_5pos#00_10.pkl',
+                        type=str, action='store', help='Path of the pickle file of FAR or FRR for each user')
+    parser.add_argument('--feature_importance_file', dest='feature_importance_file',
+                        default=r'/home/meddameloni/dl-fair-voice/exp/counterfactual_fairness/classification/far_data__resnet34vox_English-Spanish-train1@15_920_15032022_test_ENG_SPA_75users_6samples_50neg_5pos#00_10/RF_far_data__resnet34vox_English-Spanish-train1@15_920_15032022_test_ENG_SPA_75users_6samples_50neg_5pos#00_10.csv',
+                        type=str, action='store', help='File of the csv with feature and its importance.')
+    parser.add_argument('--n', dest='n', default=6, type=int, action='store',
+                        help='First n features to consider')
+    parser.add_argument('--equalize', dest='equalize_stat', default=False, action='store_true',
+                        help='If distribution between groups should be equalized for the first `n` features')
     parser.add_argument('--save_path', dest='save_path',
                         default=r'/home/meddameloni/dl-fair-voice/exp/counterfactual_fairness/audio_analysis',
                         type=str, action='store', help='Path used to save the plots')
@@ -181,20 +244,30 @@ if __name__ == "__main__":
     plt.savefig(os.path.join(args.save_path, 'audio_features_stat_difference.png'))
     plt.close()
 
-    fig, axs = plt.subplots(3, 3, figsize=(12, 12))
-    fig.delaxes(axs[2, 1])
-    fig.delaxes(axs[2, 2])
+    fig, axs = plt.subplots(3, 3, figsize=(12, 14))
+    for _ax in axs.flat[args.n:]:
+        fig.delaxes(_ax)
+
     hue = "gender"
     afa.distribution_boxplot(
         hue,
         subset=['signaltonoise_dB', 'dBFS', 'jitter_local', 'shimmer_localdB', 'hnr', 'f0_mean', 'f0_std'],
         sub_feat_axs=axs,
-        lower_gr_eq="male",
-        # min_diff_eq=1,
+        equalize_stat=args.equalize_stat,
+        results_file=args.results_file,
+        feat_imp_file=args.feature_importance_file,
+        n_eq=args.n,
+        p_value=0.05,
         sns_kw={'palette': ['#F5793A', '#A95AA1']}
     )
     for ax in axs.flat:
         ax.set_xlabel('')
-    plt.tight_layout()
-    plt.savefig(os.path.join(args.save_path, f'{hue.upper()}_distribution_barplot_hue.png'))
+
+    net = args.results_file.split('__')[1].split('_')[0]
+    plt.suptitle(net)
+    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+    plt.savefig(os.path.join(
+        args.save_path,
+        f'{net}_{hue.upper()}_{"equalized" if args.equalize_stat else "all"}_distribution_barplot_hue.png'
+    ))
     plt.close()
