@@ -294,6 +294,33 @@ class CausalClassifier:
         return lime_explainer, data
 
 
+def generate_dataset(audio_feature_path, audio_label_path):
+    dataset_path = 'dataset.csv'
+    if not os.path.exists(dataset_path):
+        with open(audio_feature_path, "rb") as taf_pkl:
+            test_audio_features = pickle.load(taf_pkl)
+            with open(audio_label_path, "rb") as fsl_pkl:
+                far_labels = pickle.load(fsl_pkl)
+            record_to_add = defaultdict(list)
+            for k, v in test_audio_features.items():
+                elements = k.split("/")
+                lan, user = elements[0], elements[1]
+                for ik, iv in v.items():
+                    if ik not in ["gender", "mood", "age"]:
+                        record_to_add[ik].append(iv)
+                record_to_add["gender"].append(far_labels[lan][user][1].split()[0])
+                record_to_add["age"].append(far_labels[lan][user][1].split()[1])
+                record_to_add["label"].append(0 if far_labels[lan][user][0] > 0 else 1)
+            audio_features_dataset = pd.DataFrame.from_records(record_to_add)
+        audio_features_dataset.loc[np.isinf(audio_features_dataset['signaltonoise_dB']), 'signaltonoise_dB'] = -1
+
+        audio_features_dataset.to_csv(dataset_path, index=False)
+    else:
+        audio_features_dataset = pd.read_csv(dataset_path)
+
+    return audio_features_dataset
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Causal Logistic Regression Classifier training pipeline')
 
@@ -324,28 +351,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     print("Composing Dataset...")
-    # dataset_path = 'dataset.csv'
-    # if not os.path.exists(dataset_path):
-    with open(args.audio_feature_path, "rb") as taf_pkl:
-        test_audio_features = pickle.load(taf_pkl)
-        with open(args.audio_label_path, "rb") as fsl_pkl:
-            far_labels = pickle.load(fsl_pkl)
-        record_to_add = defaultdict(list)
-        for k, v in test_audio_features.items():
-            elements = k.split("/")
-            lan, user = elements[0], elements[1]
-            for ik, iv in v.items():
-                if ik not in ["gender", "mood", "age"]:
-                    record_to_add[ik].append(iv)
-            record_to_add["gender"].append(far_labels[lan][user][1].split()[0])
-            record_to_add["age"].append(far_labels[lan][user][1].split()[1])
-            record_to_add["label"].append(0 if far_labels[lan][user][0] > 0 else 1)
-        audio_features_dataset = pd.DataFrame.from_records(record_to_add)
-    audio_features_dataset.loc[np.isinf(audio_features_dataset['signaltonoise_dB']), 'signaltonoise_dB'] = -1
-
-    # audio_features_dataset.to_csv(dataset_path, index=False)
-    # else:
-    #     audio_features_dataset = pd.read_csv(dataset_path)
+    audio_features_dataset = generate_dataset(args.audio_feature_path, args.audio_label_path)
     print("Dataset ready!")
 
     print("Setting up Causal Classifier...")
@@ -413,6 +419,10 @@ if __name__ == "__main__":
     else:
         causal_classifier.load()
         print("Causal Classifier loaded")
+
+        train_set_x, train_set_y = causal_classifier.train_set
+        train_set_x.to_csv('train_set_x.csv', index=False)
+        train_set_y.to_csv('train_set_y.csv', index=False)
 
         if args.cem:
             print("Using CEM for explainability")

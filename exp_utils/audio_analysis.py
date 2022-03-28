@@ -61,7 +61,7 @@ class AudioFeatureAnalyzer:
                 raise ValueError(f"The column `{gr}` does not have 2 values")
 
             gr_groups = list(df_gb.groups.keys())
-            stat_data = []
+            pval_data = []
             p_v_info = []
             for col in cols:
                 gr1 = df_gb.get_group(gr_groups[0])[col]
@@ -69,9 +69,9 @@ class AudioFeatureAnalyzer:
                 gr1 = gr1[np.isfinite(gr1)]
                 gr2 = gr2[np.isfinite(gr2)]
                 stat, pval = ttest_ind(gr1, gr2)
-                stat_data.append(stat)
+                pval_data.append(pval)
                 p_v_info.append(self.PV001 if pval <= 0.01 else (self.PV005 if pval <= 0.05 else ''))
-            out_data.append(stat_data)
+            out_data.append(pval_data)
             p_value_info.append(p_v_info)
 
         out_df = pd.DataFrame(out_data, columns=cols, index=grouping)
@@ -182,10 +182,10 @@ if __name__ == "__main__":
     parser.add_argument('--features', dest='features', default=[], nargs='+',
                         type=str, action='store', help='List of the features to extract')
     parser.add_argument('--results_file', dest='results_file',
-                        default=r'/home/meddameloni/dl-fair-voice/exp/counterfactual_fairness/evaluation/far_data__resnet34vox_English-Spanish-train1@15_920_15032022_test_ENG_SPA_75users_6samples_50neg_5pos#00_10.pkl',
+                        default=r'/home/meddameloni/dl-fair-voice/exp/counterfactual_fairness/evaluation/far_data__resnet34vox_English-Spanish-train1@15_920_20032022_test_ENG_SPA_75users_6samples_50neg_5pos#00_10.pkl',
                         type=str, action='store', help='Path of the pickle file of FAR or FRR for each user')
     parser.add_argument('--feature_importance_file', dest='feature_importance_file',
-                        default=r'/home/meddameloni/dl-fair-voice/exp/counterfactual_fairness/classification/far_data__resnet34vox_English-Spanish-train1@15_920_15032022_test_ENG_SPA_75users_6samples_50neg_5pos#00_10/RF_far_data__resnet34vox_English-Spanish-train1@15_920_15032022_test_ENG_SPA_75users_6samples_50neg_5pos#00_10.csv',
+                        default=r'/home/meddameloni/dl-fair-voice/exp/counterfactual_fairness/classification/far_data__resnet34vox_English-Spanish-train1@15_920_20032022_test_ENG_SPA_75users_6samples_50neg_5pos#00_10/RF_far_data__resnet34vox_English-Spanish-train1@15_920_20032022_test_ENG_SPA_75users_6samples_50neg_5pos#00_10.csv',
                         type=str, action='store', help='File of the csv with feature and its importance.')
     parser.add_argument('--n', dest='n', default=6, type=int, action='store',
                         help='First n features to consider')
