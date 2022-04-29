@@ -85,7 +85,7 @@ if __name__ == "__main__":
 
     # Matrix Confusion
     for k, v in data_pred.items():
-        sns.heatmap(data=v, annot=True, linewidths=.5, cmap="viridis")
+        sns.heatmap(data=v, annot=True, linewidths=.5, cmap="viridis", fmt="d")
         plt.suptitle(f"{net} {k}")
         plt.savefig(os.path.join(args.out_path, f"{net}_confusion_{k}.png"))
         plt.close()

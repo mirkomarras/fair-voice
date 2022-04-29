@@ -33,11 +33,21 @@ class AudioFeatureAnalyzer:
 
         return df.set_index(["lang", "id_user", "audio"])
 
-    def correlation_heatmap(self, subset=None, method='pearson', sns_kw=None):
+    def correlation_heatmap(self, subset=None, method='pearson', cat_to_label=None, sns_kw=None):
         cols = subset or self._df_feat.columns
         sns_kw = sns_kw or {}
 
-        corr_df = self._df_feat[cols].corr(method=method)
+        df = self._df_feat.copy()
+        if cat_to_label is not None:
+            cat_subset = set(subset) & set(cat_to_label)
+            for cat in cat_subset:
+                cat_values = df[cat].unique()
+                map_cat = dict(zip(cat_values, range(len(cat_values))))
+                print(f"`{cat}` mapping")
+                print(map_cat)
+                df[cat] = df[cat].map(map_cat)
+
+        corr_df = df[cols].corr(method=method)
         rename = {
             'speaking_duration_with_pauses': 'speak_with_pauses',
             'speaking_duration_without_pauses': 'speak_without_pauses'
@@ -177,7 +187,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Audio Features Extraction')
 
     parser.add_argument('--audio_features_path', dest='audio_features_path',
-                        default=r'/home/meddameloni/dl-fair-voice/exp/counterfactual_fairness/audio_analysis/test_audio_features.pkl',
+                        default=r'/home/meddameloni/dl-fair-voice/exp/counterfactual_fairness/audio_analysis/test_new_audio_features.pkl',
                         type=str, action='store', help='Path of the audio features extracted by AudioFeatureExtractor')
     parser.add_argument('--features', dest='features', default=[], nargs='+',
                         type=str, action='store', help='List of the features to extract')
@@ -203,6 +213,10 @@ if __name__ == "__main__":
         features_subset = [
             'signaltonoise_dB',
             'dBFS',
+            'intensity_mean',
+            'intensity_std',
+            # 'intensity_skew',
+            # 'intensity_kurt',
             # 'rms',
             # 'max',
             # 'duration_seconds',
@@ -217,9 +231,37 @@ if __name__ == "__main__":
             # 'shimmer_apq5',
             # 'shimmer_apq11',
             # 'shimmer_dda',
-            'hnr',
+            # 'hnr_mean',
+            # 'hnr_std',
+            # 'hnr_skew',
+            'hnr_kurt',
             'f0_mean',
             'f0_std',
+            'f0_skew',
+            # 'f0_kurt',
+            'f1_mean',
+            'f1_std',
+            'f1_skew',
+            # 'f1_kurt',
+            'f2_mean',
+            'f2_std',
+            # 'f2_skew',
+            # 'f2_kurt',
+            'f3_mean',
+            'f3_std',
+            # 'f3_skew',
+            'f3_kurt',
+            'f4_mean',
+            'f4_std',
+            # 'f4_skew',
+            'f4_kurt',
+            'formant_position',
+            # 'formant_dispersion',
+            # 'formant_average',
+            # 'mff',
+            # 'fitch_vtl',
+            # 'delta_f',
+            # 'vtl_delta_f',
             # 'number_syllables',
             # 'number_pauses',
             # 'rate_of_speech',
@@ -234,10 +276,16 @@ if __name__ == "__main__":
         features_subset = args.features
 
     fig, ax = plt.subplots(1, 1, figsize=(8, 8))
-    corr = afa.correlation_heatmap(subset=features_subset, sns_kw={'ax': ax})
+    corr = afa.correlation_heatmap(
+        subset=features_subset + ['gender', 'age', 'language'],
+        cat_to_label=['gender', 'age', 'language'],
+        sns_kw={'ax': ax}
+    )
     fig.tight_layout()
     fig.savefig(os.path.join(args.save_path, 'audio_features_correlation.png'))
     plt.close()
+
+    exit()
 
     stat_diff = afa.mean_stat_difference(["gender", "age"], subset=features_subset)
     plt.tight_layout()
