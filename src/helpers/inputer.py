@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 from sklearn.impute import SimpleImputer
-from sklearn.preprocessing import OneHotEncoder
+from sklearn.preprocessing import OneHotEncoder, MinMaxScaler
 from sklearn_pandas import gen_features, DataFrameMapper
 from sklearn.feature_extraction.text import HashingVectorizer
 
@@ -32,7 +32,7 @@ class DataInputer:
         if self._numerical:
             numerical_feat = gen_features(self._numerical, [{"class": SimpleImputer,
                                                              "missing_values": np.nan,
-                                                             "strategy": "mean"}])
+                                                             "strategy": "mean"}, MinMaxScaler])
         else:
             numerical_feat = []
 

@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 import tensorflow as tf
 from sklearn.metrics import f1_score, roc_auc_score, balanced_accuracy_score
 from sklearn.impute import SimpleImputer
-from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import LogisticRegression, LinearRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import GridSearchCV, train_test_split
 from sklearn.exceptions import NotFittedError
@@ -64,6 +64,9 @@ class CausalClassifier:
             self._classifier = RandomForestClassifier()
         elif classifier == "LR":
             self._classifier = LogisticRegression()
+        elif classifier == "LinR":
+            self._classifier = LinearRegression()
+            use_grid = False
         else:
             raise ValueError("Causal Classifier alias not supported!")
         self._best_gs_res = {}
