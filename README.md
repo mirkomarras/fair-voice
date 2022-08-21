@@ -11,7 +11,7 @@ This branch expands the main repository with the materials used for the followin
 
 This article and its source code propose an explanatory framework that aims to provide a better understanding of how speaker recognition models perform as the underlying voice characteristics on which they are tested change. With our framework, we evaluate two state-of-the-art speaker recognition models, comparing their fairness in terms of security, through a systematic analysis of the impact of more than twenty voice characteristics.
 
-![schema](https://user-images.githubusercontent.com/26059819/185789614-2cf5197e-dfa6-4935-bec9-c1b73dc3845e.png)
+![schema](https://user-images.githubusercontent.com/26059819/185790147-ca8ff0d3-2765-4ab2-9d66-3501571d9b65.png)
 
 ## Table of Contents
 - [Pre-requirements](#pre-requirements)
