@@ -1,6 +1,4 @@
-# Fair Voice Toolbox
-[![GitHub version](https://badge.fury.io/gh/boennemann%2Fbadges.svg)](http://badge.fury.io/gh/boennemann%2Fbadges)
-[![Dependency Status](https://david-dm.org/boennemann/badges.svg)](https://david-dm.org/boennemann/badges)
+# Causal Reasoning for Algorithmic Fairness in Voice Controlled Cyber-Physical Systems
 
 [Gianni Fenu](https://people.unica.it/giannifenu/), [Hicham Lafhouli](), [Giacomo Medda](https://www.linkedin.com/in/giacomo-medda-4b7047200), [Giacomo Meloni](https://www.linkedin.com/in/giacomo-meloni), [Mirko Marras](https://www.mirkomarras.com/)
 
@@ -16,6 +14,7 @@ This article and its source code propose an explanatory framework that aims to p
 ## Table of Contents
 - [Pre-requirements](#pre-requirements)
 - [Data Preprocessing](#data-preprocessing)
+- [Audio Features Extraction](#audio-features-extraction)
 - [Reported Results](#reported-results)
 - [Contribution](#contribution)
 - [Citations](#citations)
@@ -24,31 +23,24 @@ This article and its source code propose an explanatory framework that aims to p
        
 ## Pre-requirements
 
-Before using the source code to reproduce the article, you should install the [FairVoice toolbox](https://github.com/mirkomarras/fair-voice) according to the README of the main repository. Once done you should download the FairVoice dataset following the same document and train a deep speaker recognition architecture (ResNet-34, X-Vector etc.) with a training set. In our experiments we used models trained on the multi-language Train-1, i.e. English-Spanish Train-1 generated with the protocol presented in **"Improving Fairness in Speaker Recognition"**, In Proc. of the Symposium on Pattern Recognition and Applications (SPRA 2020), Rome.
+Before using the source code to reproduce the article, you should install the [FairVoice toolbox](https://github.com/mirkomarras/fair-voice) according to the README of the main repository. Once done, you should download the FairVoice dataset following the same document and train a deep speaker recognition architecture (ResNet-34, X-Vector etc.) with a training set. In our experiments we used models trained on the multi-language Train-1, i.e. English-Spanish Train-1 generated with the protocol presented in **"Improving Fairness in Speaker Recognition"**, In Proc. of the Symposium on Pattern Recognition and Applications (SPRA 2020), Rome.
 
-## Fair-Voice Dataset
-Our work is based on training and testing models using the Fair-Voice Dataset. This dataset was composed by downloading utterances from the Common Voice Mozilla public datasets which can be found [here](https://commonvoice.mozilla.org/it/datasets).
+## Data Preprocessing
 
-The composite dataset was cleaned of any damaged audio tracks and organized by languages with enough samples to allow for proper processing. Subsequently, the audio files originally in MP3 format were converted to WAV format in order to make them suitable for the extraction of the features to be fed to the models.
+First, we need to create a testing set on the basis of the training set selected and other parameters. The [pre-processing script](https://github.com/mirkomarras/fair-voice/blob/feature/audio_feat_ext/src/data/preprocessing.py) accepts several parameters, e.g. the number of negative and positive pairs. The following command creates the testing set used in our experiments:
+```
+python3 preprocessing.py --metadata_path /BASE_PATH/FairVoice/metadata.csv --languages English Spanish --n_users 75 --min_sample 6 --needed_users_path /BASE_PATH/dl-fair-voice/exp/counterfactual_fairness/preprocessing_data/ENG_SPA_1_TRAIN_users_dict.pkl --output_metadata_path /BASE_PATH/dl-fair-voice/exp/counterfactual_fairness/preprocessing_data/metadata_ENG_SPA_75users_6minsample.csv --neg_pairs 50 --pos_pairs 5 --fairvoice_path /BASE_PATH/FairVoice --samples_per_user 6 --output_test_path /BASE_PATH/dl-fair-voice/exp/counterfactual_fairness/preprocessing_data/test_ENG_SPA_75users_6samples_50neg_5pos.csv
+```
 
-To download the Fair-Voice dataset click the reported link and follow the steps below:
+## Audio Features Extraction
 
-> https://docs.google.com/forms/d/1Et3VxKpG2xKwOF46uT5sZvnTmOMiXYhVkZUJRwL7aFA/prefill
+## Model Evaluation
 
-1. Fill out the form you find via the link above;
-2. Download, in the project folder, the zip of the dataset whose link will be provided via email;
-3. Create the destination folder for the dataset, merge the splits where `FairVoiceZIP.zip` is the first one and unzip the archive inside the folder:
-    ```bash
-    $ mkdir FairVoice && zip -s 0 FairVoiceZIP.zip --out FairVoice.zip && unzip FairVoice.zip -d FairVoice
-    ```
-    If the *unzip* command isn't already installed on your system, then run:
-    ```bash
-    $ sudo apt-get install unzip
-    ```
-4. Remove the .zip files:
-    ```bash
-    $ sudo rm FairVoiceZIP.z* FairVoice.zip
-    ```
+## Dependant Variable
+
+## Causal Classifier Training
+
+## Causal Classifier Analysis
 
 ## Fair-Voice Data Folder Description 
 The Fair-Voice dataset consists of audio samples of 6 languages: Chinese, English, French, German, Kabyle, Spanish. In particular,
