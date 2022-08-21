@@ -7,10 +7,11 @@
 University of Cagliari
 
 This branch expands the main repository with the materials used for the following article:
-**"Causal Reasoning for Algorithmic Fairness in Voice Controlled Cyber-Physical Systems"** submitted at the *Special Issue on Pattern Recognition for Cyber-Physical-Social Services* of the *Pattern Recognition Letters* journal.
-This article and the source code propose an explanatory framework that aims to provide a better understanding of how speaker recognition models perform as the underlying voice characteristics on which they are tested change. With our framework, we evaluate two state-of-the-art speaker recognition models, comparing their fairness in terms of security, through a systematic analysis of the impact of more than twenty voice characteristics
+- **"Causal Reasoning for Algorithmic Fairness in Voice Controlled Cyber-Physical Systems"** submitted at the *Special Issue on Pattern Recognition for Cyber-Physical-Social Services* of the *Pattern Recognition Letters* journal.
 
-![Screenshot](img/fair-voice_architecture.png)
+This article and its source code propose an explanatory framework that aims to provide a better understanding of how speaker recognition models perform as the underlying voice characteristics on which they are tested change. With our framework, we evaluate two state-of-the-art speaker recognition models, comparing their fairness in terms of security, through a systematic analysis of the impact of more than twenty voice characteristics.
+
+![schema](https://user-images.githubusercontent.com/26059819/185789614-2cf5197e-dfa6-4935-bec9-c1b73dc3845e.png)
 
 ## Table of Contents
 - [Pre-requirements](#pre-requirements)
@@ -21,21 +22,9 @@ This article and the source code propose an explanatory framework that aims to p
 - [License](#license)
 
        
-## Installation
+## Pre-requirements
 
-Install Python (>=3.7):
-```
-$ sudo apt-get update
-$ sudo apt-get install python3.7
-```
-Install all the requirements needed:
-```
-$ pip install -r https://github.com/mirkomarras/fair-voice/blob/master/requirements.txt
-```
-Clone this repository:
-```
-$ git clone https://github.com/mirkomarras/fair-voice.git
-```
+Before using the source code to reproduce the article, you should install the [FairVoice toolbox](https://github.com/mirkomarras/fair-voice) according to the README of the main repository. Once done you should download the FairVoice dataset following the same document and train a deep speaker recognition architecture (ResNet-34, X-Vector etc.) with a training set. In our experiments we used models trained on the multi-language Train-1, i.e. English-Spanish Train-1 generated with the protocol presented in **"Improving Fairness in Speaker Recognition"**, In Proc. of the Symposium on Pattern Recognition and Applications (SPRA 2020), Rome.
 
 ## Fair-Voice Dataset
 Our work is based on training and testing models using the Fair-Voice Dataset. This dataset was composed by downloading utterances from the Common Voice Mozilla public datasets which can be found [here](https://commonvoice.mozilla.org/it/datasets).
