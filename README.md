@@ -2,31 +2,19 @@
 [![GitHub version](https://badge.fury.io/gh/boennemann%2Fbadges.svg)](http://badge.fury.io/gh/boennemann%2Fbadges)
 [![Dependency Status](https://david-dm.org/boennemann/badges.svg)](https://david-dm.org/boennemann/badges)
 
-[Gianni Fenu](https://people.unica.it/giannifenu/), [Hicham Lafhouli](), [Giacomo Medda](), [Giacomo Meloni](https://www.linkedin.com/in/giacomo-meloni), [Mirko Marras](https://www.mirkomarras.com/)
+[Gianni Fenu](https://people.unica.it/giannifenu/), [Hicham Lafhouli](), [Giacomo Medda](https://www.linkedin.com/in/giacomo-medda-4b7047200), [Giacomo Meloni](https://www.linkedin.com/in/giacomo-meloni), [Mirko Marras](https://www.mirkomarras.com/)
 
 University of Cagliari
 
-This repository contains a Python framework for bias mitigation analysis in Speaker Verification Models, in order to be able to verify and study what possible solutions may be to reduce the disparities in performance between sensitive categories such as gender and age.
-
-This repository contains the source code of the following articles: 
-- **"Exploring Algorithmic Fairness in Deep Speaker Verification"**, In Proc. of the International Conference on Computational Science and its Applications (ICSSA2020), Springer.
-- **"Improving Fairness in Speaker Recognition"**, In Proc. of the Symposium on Pattern Recognition and Applications (SPRA 2020), Rome. 
-
+This branch expands the main repository with the materials used for the following article:
+**"Causal Reasoning for Algorithmic Fairness in Voice Controlled Cyber-Physical Systems"** submitted at the *Special Issue on Pattern Recognition for Cyber-Physical-Social Services* of the *Pattern Recognition Letters* journal.
+This article and the source code propose an explanatory framework that aims to provide a better understanding of how speaker recognition models perform as the underlying voice characteristics on which they are tested change. With our framework, we evaluate two state-of-the-art speaker recognition models, comparing their fairness in terms of security, through a systematic analysis of the impact of more than twenty voice characteristics
 
 ![Screenshot](img/fair-voice_architecture.png)
 
 ## Table of Contents
-- [Installation](#installation)
-- [Fair-Voice Dataset](#fair-voice-dataset)
-- [Fair-Voice Data Folder Description](#fair-voice-data-folder-organisation)
-- [Pre-processing Module](#pre-processing-module)
-- [Models](#models)
-- [Train](#train)
-- [Test](#test)
-- [Experiment Utils](#experiment-utils)
-    - [Equal Error Rate model's performance comparison](#equal-error-rate-model's-performance-comparison)
-    - [Results Similarity Check](#similarity-check)
-    - [Audio Features Similarity Check](#audio-features-similarity-check)
+- [Pre-requirements](#pre-requirements)
+- [Data Preprocessing](#data-preprocessing)
 - [Reported Results](#reported-results)
 - [Contribution](#contribution)
 - [Citations](#citations)
