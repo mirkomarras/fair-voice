@@ -34,6 +34,8 @@ python3 preprocessing.py --metadata_path /BASE_PATH/FairVoice/metadata.csv --lan
 
 ## Audio Features Extraction
 
+The testing set just created is comprised of audio samples, which need to be manipulated to extract the features to feed in input to the explanatory framework. The [audio features exctractor script](https://github.com/mirkomarras/fair-voice/blob/feature/audio_feat_ext/src/helpers/audio_features.py) accepts several parameters, that are described inside the script. The features to extract 
+
 ## Model Evaluation
 
 ## Dependant Variable
