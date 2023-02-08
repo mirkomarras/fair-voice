@@ -20,7 +20,7 @@ def preprocess_data(metadata_path,
                     languages,
                     min_sample=0,
                     last_younger="fourties",
-                    user_in: Dict[Language, Iterable[str]] = None):
+                    user_in: Dict[Language, Dict[str, Iterable[str]]] = None):
     """
 
     :param metadata_path: file of metadata with information about each user
@@ -54,7 +54,7 @@ def preprocess_data(metadata_path,
             new_g_df = []
             for lang in user_in:
                 lang_g_df = g_df[g_df["language_l1"] == lang]
-                lang_g_df = lang_g_df[lang_g_df["id_user"].isin(user_in[lang])]
+                lang_g_df = lang_g_df[lang_g_df["id_user"].isin(list(user_in[lang].keys()))]
                 new_g_df.append(lang_g_df.sample(n))
             g_df = pd.concat(new_g_df)
 
@@ -69,7 +69,8 @@ def test_file_from_df(df: pd.DataFrame,
                       neg_pairs,
                       pos_pairs,
                       fairvoice_path=None,
-                      samples_per_user=None):
+                      samples_per_user=None,
+                      audio_in=None):
     """
 
     :param df: a DataFrame in the same format of the one returned by `preprocess_data`
@@ -100,7 +101,10 @@ def test_file_from_df(df: pd.DataFrame,
 
         df_info = df.set_index(["language_l1", "id_user"])
         for user in users_audios[lang]:
-            user_samples = np.random.permutation(os.listdir(os.path.join(fairvoice_path, lang, user)))
+            if audio_in:
+                user_samples = np.random.permutation(audio_in[lang][user])
+            else:
+                user_samples = np.random.permutation(os.listdir(os.path.join(fairvoice_path, lang, user)))
             users_audios[lang][user] = user_samples[:samples_per_user]
             users_info[lang][user] = dict(zip(
                 ["gender", "age"],
@@ -154,7 +158,7 @@ def test_file_from_df(df: pd.DataFrame,
 
 if __name__ == "__main__":
     """
-    python3 preprocessing.py --metadata_path /home/meddameloni/FairVoice/metadata.csv --languages English Spanish --n_users 75 --min_sample 6 --needed_users_path /home/meddameloni/dl-fair-voice/exp/counterfactual_fairness/preprocessing_data/ENG_SPA_1_TRAIN_users_dict.pkl --output_metadata_path /home/meddameloni/dl-fair-voice/exp/counterfactual_fairness/preprocessing_data/metadata_ENG_SPA_75users_6minsample.csv --neg_pairs 50 --pos_pairs 5 --fairvoice_path /home/meddameloni/FairVoice --samples_per_user 6 --output_test_path /home/meddameloni/dl-fair-voice/exp/counterfactual_fairness/preprocessing_data/test_ENG_SPA_75users_6samples_50neg_5pos.csv
+    python3 preprocessing.py --metadata_path /home/meddameloni/FairVoice/metadata.csv --languages English Spanish --n_users 75 --min_sample 6 --needed_users_audio_path /home/meddameloni/dl-fair-voice/exp/counterfactual_fairness/preprocessing_data/ENG_SPA_1_TRAIN_users_dict.pkl --output_metadata_path /home/meddameloni/dl-fair-voice/exp/counterfactual_fairness/preprocessing_data/metadata_ENG_SPA_75users_6minsample.csv --neg_pairs 50 --pos_pairs 5 --fairvoice_path /home/meddameloni/FairVoice --samples_per_user 6 --output_test_path /home/meddameloni/dl-fair-voice/exp/counterfactual_fairness/preprocessing_data/test_ENG_SPA_75users_6samples_50neg_5pos.csv
     """
 
     parser = argparse.ArgumentParser(description='Tensorflow counterfactual fairness preprocessing')
@@ -164,7 +168,7 @@ if __name__ == "__main__":
     parser.add_argument('--languages', dest='languages', default=["English", "Spanish"], type=str, nargs='+', action='store', help='List of languages to keep')
     parser.add_argument('--n_users', dest='n_users', default=130, type=int, action='store', help='Number of users for each demographic group')
     parser.add_argument('--min_sample', dest='min_sample', default=6, type=int, action='store', help='Min sample per user')
-    parser.add_argument('--needed_users_path', dest='needed_users_path', default='./data/ENG_SPA_1_TRAIN_users_dict.py', type=str, action='store', help='Path to pickle dict of [Language => Array of users] that are allowed to be in output')
+    parser.add_argument('--needed_users_audio_path', dest='needed_users_audio_path', default='./data/ENG_SPA_1_TRAIN_users_dict.py', type=str, action='store', help='Path to pickle dict of [Language => Array of users] that are allowed to be in output')
     parser.add_argument('--output_metadata_path', dest='output_metadata_path', default=None, type=str, action='store', help='Output metadata path')
     parser.add_argument('--neg_pairs', dest='neg_pairs', default=50, type=int, action='store', help='Number of negative pairs')
     parser.add_argument('--pos_pairs', dest='pos_pairs', default=5, type=int, action='store', help='Number of positive pairs')
@@ -191,18 +195,23 @@ if __name__ == "__main__":
     print('>', 'Samples per User: {}'.format(args.samples_per_user))
     print('>', 'Output Test Path: {}'.format(args.output_test_path))
 
-    if args.needed_users_path:
-        with open(args.needed_users_path, 'rb') as f:
-            needed_users = pickle.load(f)
+    if args.needed_users_audio_path:
+        with open(args.needed_users_audio_path, 'rb') as f:
+            needed_users_audio = pickle.load(f)
     else:
-        needed_users = None
+        needed_users_audio = None
 
     out_df = preprocess_data(args.metadata_path,
                              args.n_users,
                              languages=args.languages,
                              min_sample=args.min_sample,
-                             user_in=needed_users)
+                             user_in=needed_users_audio)
     out_df.to_csv(args.output_metadata_path, index=False)
 
-    test_dataframe = test_file_from_df(out_df, args.neg_pairs, args.pos_pairs, fairvoice_path=args.fairvoice_path, samples_per_user=args.samples_per_user)
+    test_dataframe = test_file_from_df(out_df,
+                                       args.neg_pairs,
+                                       args.pos_pairs,
+                                       fairvoice_path=args.fairvoice_path,
+                                       samples_per_user=args.samples_per_user,
+                                       audio_in=needed_users_audio)
     test_dataframe.to_csv(args.output_test_path, index=False)

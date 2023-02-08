@@ -37,11 +37,11 @@ class AudioFeatureExtractor(object):
         self._audio_path = audio
         self._channels = 1
         self._sample_rate = sample_rate
+        self._temp_audio_path = os.path.join(os.getcwd(), "temp_" + os.path.basename(audio))
         self._audio_librosa = audio_helper.decode_audio_fix_size(audio,
                                                                  sample_rate=sample_rate,
                                                                  n_seconds=n_seconds,
                                                                  input_format='raw')
-        self._temp_audio_path = os.path.join(os.getcwd(), "temp_" + os.path.basename(audio))
         librosa.output.write_wav(self._temp_audio_path, self._audio_librosa, sample_rate)
 
         self._audio_pydub = pydub.AudioSegment(
@@ -545,9 +545,11 @@ def extract_audio_features(audios: Sequence[Union[str, os.PathLike]],
     features = {}
     users_audios = defaultdict(dict)
     for audio in audios:
-        afe = AudioFeatureExtractor(os.path.join(audio_base_path, audio))
-        features[audio] = afe.get_features(subset=subset)
-        users_audios[os.path.dirname(audio)][audio] = afe
+        lang, userid, x = audio.split(os.sep)
+        if lang == "English" and userid == "id00906":
+            afe = AudioFeatureExtractor(os.path.join(audio_base_path, audio))
+            features[audio] = afe.get_features(subset=subset)
+            users_audios[os.path.dirname(audio)][audio] = afe
 
     static_funcs = [k for k, v in AudioFeatureExtractor.__dict__.items() if isinstance(v, staticmethod) and k in subset]
     for func in static_funcs:

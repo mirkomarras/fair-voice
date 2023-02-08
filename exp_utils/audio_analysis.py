@@ -195,7 +195,7 @@ if __name__ == "__main__":
                         default=r'/home/meddameloni/dl-fair-voice/exp/counterfactual_fairness/evaluation/far_data__resnet34vox_English-Spanish-train1@15_920_20032022_test_ENG_SPA_75users_6samples_50neg_5pos#00_10.pkl',
                         type=str, action='store', help='Path of the pickle file of FAR or FRR for each user')
     parser.add_argument('--feature_importance_file', dest='feature_importance_file',
-                        default=r'/home/meddameloni/dl-fair-voice/exp/counterfactual_fairness/classification/far_data__resnet34vox_English-Spanish-train1@15_920_20032022_test_ENG_SPA_75users_6samples_50neg_5pos#00_10/RF_far_data__resnet34vox_English-Spanish-train1@15_920_20032022_test_ENG_SPA_75users_6samples_50neg_5pos#00_10.csv',
+                        default=r'/home/meddameloni/dl-fair-voice/exp/counterfactual_fairness/classification/far_data__resnet34vox_English-Spanish-train1@15_920_20032022_test_ENG_SPA_75users_6samples_50neg_5pos#00_10/features_RF_far_data__resnet34vox_English-Spanish-train1@15_920_20032022_test_ENG_SPA_75users_6samples_50neg_5pos#00_10.csv',
                         type=str, action='store', help='File of the csv with feature and its importance.')
     parser.add_argument('--n', dest='n', default=6, type=int, action='store',
                         help='First n features to consider')
@@ -207,9 +207,86 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    SMALL_SIZE = 12
+    MEDIUM_SIZE = 14
+    BIGGER_SIZE = 16
+
+    plt.rc('font', size=SMALL_SIZE)  # controls default text sizes
+    plt.rc('axes', titlesize=BIGGER_SIZE)  # fontsize of the axes title
+    plt.rc('axes', labelsize=BIGGER_SIZE)  # fontsize of the x and y labels
+    plt.rc('xtick', labelsize=BIGGER_SIZE)  # fontsize of the tick labels
+    plt.rc('ytick', labelsize=BIGGER_SIZE)  # fontsize of the tick labels
+    plt.rc('legend', fontsize=BIGGER_SIZE)  # legend fontsize
+    plt.rc('figure', titlesize=BIGGER_SIZE)
+
     afa = AudioFeatureAnalyzer(args.audio_features_path)
 
     if not args.features:
+        # All extracted features
+        # features_subset = [
+        #     'signaltonoise_dB',
+        #     'dBFS',
+        #     'intensity_mean',
+        #     'intensity_std',
+        #     'intensity_skew',
+        #     'intensity_kurt',
+        #     # 'rms',
+        #     # 'max',
+        #     # 'duration_seconds',
+        #     # 'jitter_localabsolute',
+        #     'jitter_local',
+        #     # 'jitter_rap',
+        #     # 'jitter_ppq5',
+        #     # 'jitter_ddp',
+        #     'shimmer_localdB',
+        #     # 'shimmer_local',
+        #     # 'shimmer_apq3',
+        #     # 'shimmer_apq5',
+        #     # 'shimmer_apq11',
+        #     # 'shimmer_dda',
+        #     'hnr_mean',
+        #     'hnr_std',
+        #     'hnr_skew',
+        #     'hnr_kurt',
+        #     'f0_mean',
+        #     'f0_std',
+        #     'f0_skew',
+        #     'f0_kurt',
+        #     'f1_mean',
+        #     'f1_std',
+        #     'f1_skew',
+        #     'f1_kurt',
+        #     'f2_mean',
+        #     'f2_std',
+        #     'f2_skew',
+        #     'f2_kurt',
+        #     'f3_mean',
+        #     'f3_std',
+        #     'f3_skew',
+        #     'f3_kurt',
+        #     'f4_mean',
+        #     'f4_std',
+        #     'f4_skew',
+        #     'f4_kurt',
+        #     'formant_position',
+        #     'formant_dispersion',
+        #     'formant_average',
+        #     'mff',
+        #     'fitch_vtl',
+        #     'delta_f',
+        #     'vtl_delta_f',
+        #     # 'number_syllables',
+        #     # 'number_pauses',
+        #     # 'rate_of_speech',
+        #     # 'articulation_rate',
+        #     'speaking_duration_without_pauses',
+        #     # 'speaking_duration_with_pauses',
+        #     # 'balance',
+        #     # 'gender',
+        #     # 'mood'
+        # ]
+
+        # Features before passing through VIF, but pruned on the basis of correlation plot
         features_subset = [
             'signaltonoise_dB',
             'dBFS',
@@ -275,22 +352,21 @@ if __name__ == "__main__":
     else:
         features_subset = args.features
 
-    fig, ax = plt.subplots(1, 1, figsize=(8, 8))
+    fig, ax = plt.subplots(1, 1, figsize=(12, 10))
     corr = afa.correlation_heatmap(
         subset=features_subset + ['gender', 'age', 'language'],
         cat_to_label=['gender', 'age', 'language'],
         sns_kw={'ax': ax}
     )
     fig.tight_layout()
-    fig.savefig(os.path.join(args.save_path, 'audio_features_correlation.png'))
+    fig.savefig(os.path.join(args.save_path, 'audio_features_correlation.png'), dpi=250, bbox_inches='tight', pad_inches=0)
     plt.close()
-
-    exit()
 
     stat_diff = afa.mean_stat_difference(["gender", "age"], subset=features_subset)
     plt.tight_layout()
     plt.savefig(os.path.join(args.save_path, 'audio_features_stat_difference.png'))
     plt.close()
+    exit()
 
     fig, axs = plt.subplots(3, 3, figsize=(12, 14))
     for _ax in axs.flat[args.n:]:

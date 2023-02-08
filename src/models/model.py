@@ -32,6 +32,7 @@ RESULT_PATH_RESNET50 = os.path.join(RESULT_PATH, 'resnet50vox_EN-SP/')
 RESULT_SECOND_STAGE = os.path.join(RESULT_PATH, 'second_stage/')
 RESULT_SECOND_STAGE_SN_RESNET = os.path.join(RESULT_PATH, 'second_stage/siamese_net/resnet34vox/first_stage/')
 RESULT_SECOND_STAGE_SN_XVECTOR = os.path.join(RESULT_PATH, 'second_stage/siamese_net/xvector/first_stage/')
+RESULT_PATH_COUNTERFACTUAL = os.path.join(RESULT_PATH, os.pardir, 'counterfactual_fairness', 'results', '')
 
 
 class StepDecay():
@@ -383,7 +384,7 @@ class Model(object):
 
         test_file_name = test_file.split('/')[-1][:-4]
 
-        path = RESULT_PATH + \
+        path = RESULT_PATH_COUNTERFACTUAL + \
                self.name + '_' + \
                train_model_name + '@' + epoch_time + '_' + \
                accuracy + '_' + \

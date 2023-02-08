@@ -1,2 +1,3 @@
 /src/helpers/test_audio_features.pkl
 /src/helpers/far_data__resnet34vox_English-Spanish-train1@15_920_08032022_test_ENG_SPA_75users_6samples_50neg_5pos#00_10.pkl
+__pycache__/
