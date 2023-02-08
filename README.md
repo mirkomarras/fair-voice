@@ -87,11 +87,13 @@ python3 causal_classifier_analysis.py --model /BASE_PATH/dl-fair-voice/exp/count
 ## Paper Results
 ![audio_features_correlation_before_VIF](https://user-images.githubusercontent.com/26059819/217531998-2b420373-f7a4-4d0d-9390-07e86bd4b784.png)
 
-ResNet34 Random Forest
+### ResNet34 Random Forest
+
 ![ResNet34-RF](https://user-images.githubusercontent.com/26059819/217532038-31d9739e-1552-4a4d-86cd-2ed5c69714ca.png)
 ![resnet34vox_RF_kde_plot_hue_all](https://user-images.githubusercontent.com/26059819/217532172-be46a700-2ff0-427f-9582-f948742604e3.png)
 
-X-Vector Random Forest
+### X-Vector Random Forest
+
 ![X-Vector-RF](https://user-images.githubusercontent.com/26059819/217532201-0670f1bf-2def-4c2f-abdb-6f7d1d68345d.png)
 ![xvector_RF_kde_plot_hue_all](https://user-images.githubusercontent.com/26059819/217532217-32df35e9-dd95-4f3a-889a-a079129c4fa1.png)
 
