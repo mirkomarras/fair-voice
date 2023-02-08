@@ -15,6 +15,9 @@ This article and its source code propose an explanatory framework that aims to p
 - [Pre-requirements](#pre-requirements)
 - [Data Preprocessing](#data-preprocessing)
 - [Audio Features Extraction](#audio-features-extraction)
+- [Model Evaluation](#model-evaluation)
+- [Causal Classifier Training](#causal-classifier-training)
+- [Causal Classifier Analysis](#causal-classifier-analysis)
 - [Reported Results](#reported-results)
 - [Contribution](#contribution)
 - [Citations](#citations)
@@ -34,15 +37,53 @@ python3 preprocessing.py --metadata_path /BASE_PATH/FairVoice/metadata.csv --lan
 
 ## Audio Features Extraction
 
-The testing set just created is comprised of audio samples, which need to be manipulated to extract the features to feed in input to the explanatory framework. The [audio features exctractor script](https://github.com/mirkomarras/fair-voice/blob/feature/audio_feat_ext/src/helpers/audio_features.py) accepts several parameters, that are described inside the script. The features to extract 
+The testing set just created comprises audio samples, which need to be manipulated to extract the features to feed in input
+to the explanatory framework. The [audio features extractor script](https://github.com/mirkomarras/fair-voice/blob/feature/audio_feat_ext/src/helpers/audio_features.py)
+accepts several parameters, that are described inside the script. The features to extract are listed in the same script
+and can be extracted as follows:
+```
+python3 audio_features.py --fairvoice_path /BASE_PATH/FairVoice --test_path /BASE_PATH/dl-fair-voice/exp/counterfactual_fairness/preprocessing_data/test_ENG_SPA_75users_6samples_50neg_5pos.csv --metadata_path /BASE_PATH/dl-fair-voice/exp/counterfactual_fairness/preprocessing_data/metadata_ENG_SPA_75users_6minsample.csv --save_path /BASE_PATH/dl-fair-voice/exp/counterfactual_fairness/audio_analysis/test_new_audio_features.pkl 
+```
 
 ## Model Evaluation
 
-## Dependant Variable
+The models should now be evaluated to extract the metric values for the dependent variable, e.g. false acceptance rate (FAR),
+that generate pickle files with the far data mapped as 0 and 1 depending on the selected threshold for FAR (or false rejection rate, FRR). For
+each model the [script](https://github.com/mirkomarras/fair-voice/blob/feature/audio_feat_ext/src/evaluation/evaluate.py) is run as follows:
+```
+Resnet34
+python3 evaluate.py --results_file /BASE_PATH/dl-fair-voice/exp/counterfactual_fairness/results/resnet34vox_English-Spanish-train1@15_920_20032022_test_ENG_SPA_75users_6samples_50neg_5pos#00_10.csv --plots_kde_filepath "/BASE_PATH/dl-fair-voice/exp/counterfactual_fairness/evaluation/plots/{}_kde__resnet34vox_English-Spanish-train1@15_920_20032022_test_ENG_SPA_75users_6samples_50neg_5pos#00_10.png" --far_label_0_le 0 --frr_label_0_le 0 --plots_hist_filepath "/BASE_PATH/dl-fair-voice/exp/counterfactual_fairness/evaluation/plots/{}_0_0_hist__resnet34vox_English-Spanish-train1@15_920_20032022_test_ENG_SPA_75users_6samples_50neg_5pos#00_10.png"
+
+X-Vector
+python3 evaluate.py --results_file /BASE_PATH/dl-fair-voice/exp/counterfactual_fairness/results/xvector_English-Spanish-train1@13_992_20032022_test_ENG_SPA_75users_6samples_50neg_5pos#00_10.csv --plots_kde_filepath "/BASE_PATH/dl-fair-voice/exp/counterfactual_fairness/evaluation/plots/{}_kde__xvector_English-Spanish-train1@13_992_20032022_test_ENG_SPA_75users_6samples_50neg_5pos#00_10.png" --far_label_0_le 0 --frr_label_0_le 0 --plots_hist_filepath "/BASE_PATH/dl-fair-voice/exp/counterfactual_fairness/evaluation/plots/{}_0_0_hist__xvector_English-Spanish-train1@13_992_20032022_test_ENG_SPA_75users_6samples_50neg_5pos#00_10.png"
+```
 
 ## Causal Classifier Training
 
+Now we have all the data necessary to train the causal classifier to find the importance of each audio feature to predict
+the dependent variable, FAR or FRR. The [training script](https://github.com/mirkomarras/fair-voice/blob/feature/audio_feat_ext/src/helpers/causal_classifier.py)
+can be executed for both each speaker recognition architecture with Random Forest (RF) as follows:
+```
+ResNet-34
+python3 causal_classifier.py --af_path /BASE_PATH/dl-fair-voice/exp/counterfactual_fairness/audio_analysis/test_new_audio_features.pkl --al_path /BASE_PATH/dl-fair-voice/exp/counterfactual_fairness/evaluation/far_data__resnet34vox_English-Spanish-train1@15_920_20032022_test_ENG_SPA_75users_6samples_50neg_5pos#00_10.pkl --metr_feats_folder /BASE_PATH/dl-fair-voice/exp/counterfactual_fairness/classification/far_data__resnet34vox_English-Spanish-train1@15_920_20032022_test_ENG_SPA_75users_6samples_50neg_5pos#00_10 --dataset_save_path /BASE_PATH/dl-fair-voice/exp/counterfactual_fairness/classification --model_save_path /BASE_PATH/dl-fair-voice/exp/counterfactual_fairness/classification/far_data__resnet34vox_English-Spanish-train1@15_920_20032022_test_ENG_SPA_75users_6samples_50neg_5pos#00_10/causal_classifier_RF.model --cc RF
+    
+X-Vector
+python3 causal_classifier.py --af_path /BASE_PATH/dl-fair-voice/exp/counterfactual_fairness/audio_analysis/test_new_audio_features.pkl --al_path /BASE_PATH/dl-fair-voice/exp/counterfactual_fairness/evaluation/far_data__xvector_English-Spanish-train1@13_992_20032022_test_ENG_SPA_75users_6samples_50neg_5pos#00_10.pkl --metr_feats_folder /BASE_PATH/dl-fair-voice/exp/counterfactual_fairness/classification/far_data__xvector_English-Spanish-train1@13_992_20032022_test_ENG_SPA_75users_6samples_50neg_5pos#00_10 --dataset_save_path /BASE_PATH/dl-fair-voice/exp/counterfactual_fairness/classification --model_save_path /BASE_PATH/dl-fair-voice/exp/counterfactual_fairness/classification/far_data__xvector_English-Spanish-train1@13_992_20032022_test_ENG_SPA_75users_6samples_50neg_5pos#00_10/causal_classifier_RF.model --cc RF
+```
+
 ## Causal Classifier Analysis
+
+The [causal classifier analysis script](https://github.com/mirkomarras/fair-voice/blob/feature/audio_feat_ext/exp_utils/causal_classifier_analysis.py)
+executes a counterfactual evaluation by comparing the predictions of the just trained causal classifiers with the predictions
+on altered data, where the sensitive attributes (gender, age, language) are flipped to study if the causal classifier is
+affected if we hypothesize that a user belonged to a different demographic group. The script can be run as follows:
+```
+ResNet34
+python3 causal_classifier_analysis.py --model /BASE_PATH/dl-fair-voice/exp/counterfactual_fairness/classification/far_data__resnet34vox_English-Spanish-train1@15_920_20032022_test_ENG_SPA_75users_6samples_50neg_5pos#00_10/causal_classifier_RF.model --train_set_x /BASE_PATH/dl-fair-voice/exp/counterfactual_fairness/classification/train_set_x_resnet34vox.csv --train_set_y /BASE_PATH/dl-fair-voice/exp/counterfactual_fairness/classification/train_set_y_resnet34vox.csv
+
+X-Vector
+python3 causal_classifier_analysis.py --model /BASE_PATH/dl-fair-voice/exp/counterfactual_fairness/classification/far_data__xvector_English-Spanish-train1@13_992_20032022_test_ENG_SPA_75users_6samples_50neg_5pos#00_10/causal_classifier_RF.model --train_set_x /BASE_PATH/dl-fair-voice/exp/counterfactual_fairness/classification/train_set_x_xvector.csv --train_set_y /BASE_PATH/dl-fair-voice/exp/counterfactual_fairness/classification/train_set_y_xvector.csv
+```
 
 ## Fair-Voice Data Folder Description 
 The Fair-Voice dataset consists of audio samples of 6 languages: Chinese, English, French, German, Kabyle, Spanish. In particular,
